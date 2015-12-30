@@ -1,0 +1,4 @@
+FROM golang:1.5
+ENV DAPPER_SOURCE /go/src/github.com/rancher/rancher-net
+RUN go get github.com/imikushin/trash
+WORKDIR ${DAPPER_SOURCE}
