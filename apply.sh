@@ -13,7 +13,8 @@ STRONGSWAN=$(echo strongswan/*)
 STAMP=/usr/local/.$(basename $STRONGSWAN)
 
 if [ ! -e $STAMP ]; then
-    tar xvf $STRONGSWAN -C /
+    echo Extracting $STRONGSWAN
+    tar xf $STRONGSWAN -C /
     touch $STAMP
 fi
 

@@ -11,7 +11,7 @@ mkdir -p build/${CONTENT}
 mkdir -p dist/artifacts
 
 strip --strip-debug bin/*
-cp -rf apply.sh bin strongswan build/${CONTENT}
+cp -rf apply.sh bin strongswan content build/${CONTENT}
 
 cd build
 
