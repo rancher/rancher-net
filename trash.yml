@@ -1,0 +1,18 @@
+import:
+- package: golang.org/x/net
+  version: 0cb26f788dd4625d1956c6fd97ffc4c90669d129
+- package: github.com/vishvananda/netlink
+  version: bfd70f556483c008636b920dda142fdaa0d59ef9
+- package: github.com/Sirupsen/logrus
+  version: 446d1c146faa8ed3f4218f056fcd165f6bcfda81
+- package: github.com/codegangsta/cli
+  version: c31a7975863e7810c92e2e288a9ab074f9a88f29
+- package: github.com/bronze1man/goStrongswanVici
+  version: 1dd0430ee7d545699ef76caa8a51ecb5aa6f13fe
+  repo: https://github.com/rancher/goStrongswanVici.git
+- package: github.com/mdlayher/ethernet
+  version: 28018267bba4d651e8e0fcbca8aae7c13f4ce4ae
+- package: github.com/mdlayher/raw
+  version: cb5e087c798a9e04245bda0846d7982464e6dc22
+- package: github.com/mdlayher/arp
+  version: 66036d06dd172c707c51a754856ccc12449b0aa6
