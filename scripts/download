@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+cd $(dirname $0)/..
+
+VERSION=5.3.5-1
+HASH=207eca78ac49814fe0181c406220a0cceac9ed29
+
+if [ "$(sha1sum -b strongswan/strongswan-${VERSION}.tar.gz | awk '{print $1}')" != "$HASH" ]; then
+    mkdir -p strongswan
+    curl -L https://github.com/rancher/strongswan-package/releases/download/v${VERSION}/strongswan-${VERSION}.tar.gz > strongswan/strongswan-${VERSION}.tar.gz
+    [ "$(sha1sum -b strongswan/strongswan-${VERSION}.tar.gz | awk '{print $1}')" == "$HASH" ]
+fi
