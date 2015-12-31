@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -48,8 +49,8 @@ func NewOverlay(configDir string, db store.Store) *Overlay {
 	}
 }
 
-func (o *Overlay) Start() {
-	go runCharon()
+func (o *Overlay) Start(logFile string) {
+	go runCharon(logFile)
 }
 
 func (o *Overlay) Reload() error {
@@ -66,7 +67,7 @@ func (o *Overlay) Reload() error {
 	return o.configure()
 }
 
-func runCharon() {
+func runCharon(logFile string) {
 	// Ignore error
 	os.Remove("/var/run/charon.vici")
 
@@ -83,6 +84,17 @@ func runCharon() {
 	cmd := exec.Command("charon", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	if logFile != "" {
+		output, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			logrus.Fatalf("Failed to log to file %s: %v", logFile, err)
+		}
+		defer output.Close()
+		cmd.Stdout = output
+		cmd.Stderr = output
+	}
+
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Pdeathsig: syscall.SIGTERM,
 	}
@@ -113,7 +125,8 @@ func (o *Overlay) configure() error {
 	localHostIp := o.db.LocalHostIpAddress()
 	hosts := map[string]bool{}
 
-	policies, err := o.getRules()
+	policiesToAdd := map[string]netlink.XfrmPolicy{}
+	existingPolicies, err := o.getRules()
 	if err != nil {
 		firstErr = handleErr(firstErr, err, "Failed to list rules for: %v", err)
 	}
@@ -136,19 +149,22 @@ func (o *Overlay) configure() error {
 			}
 		}
 
-		if err := o.addRules(entry, policies); err != nil {
+		if err := o.addRules(entry, existingPolicies, policiesToAdd); err != nil {
 			firstErr = handleErr(firstErr, err, "Failed to add rules for host %s, ip %s : %v", entry.HostIpAddress, entry.IpAddress, err)
 		}
 	}
 
-	// Only purge when things worked
 	if firstErr == nil {
-		firstErr = o.removeHosts()
-		// Currently VICI doesn't support unloading keys
+		firstErr = o.deletePolicies(existingPolicies)
 	}
 
 	if firstErr == nil {
-		firstErr = o.deletePolicies(policies)
+		firstErr = o.addPolicies(policiesToAdd)
+	}
+
+	if firstErr == nil {
+		firstErr = o.removeHosts()
+		// Currently VICI doesn't support unloading keys
 	}
 
 	return firstErr
@@ -162,6 +178,19 @@ func (o *Overlay) deletePolicies(policies map[string]netlink.XfrmPolicy) error {
 			lastErr = err
 		} else {
 			logrus.Infof("Deleted policy: %+v", policy)
+		}
+	}
+	return lastErr
+}
+
+func (o *Overlay) addPolicies(policies map[string]netlink.XfrmPolicy) error {
+	var lastErr error
+	for _, policy := range policies {
+		if err := netlink.XfrmPolicyAdd(&policy); err != nil {
+			logrus.Errorf("Failed to add policy: %+v, %v", policy, err)
+			lastErr = err
+		} else {
+			logrus.Infof("Added policy: %+v", policy)
 		}
 	}
 	return lastErr
@@ -296,7 +325,7 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 	}
 
 	name := fmt.Sprintf("conn-%s", entry.HostIpAddress)
-	// Loading connections does seem to be very reliable, can't get info
+	// Loading connections doesn't seem to be very reliable, can't get info
 	// why it's failing though.
 	for i := 0; i < 3; i++ {
 		err = client.LoadConn(&map[string]goStrongswanVici.IKEConf{
@@ -332,12 +361,14 @@ func toKey(p *netlink.XfrmPolicy) string {
 		buffer.WriteString(p.Tmpls[0].Src.String())
 		buffer.WriteRune('-')
 		buffer.WriteString(p.Tmpls[0].Dst.String())
+		buffer.WriteRune('-')
+		buffer.WriteString(strconv.Itoa(p.Tmpls[0].Reqid))
 	}
 
 	return buffer.String()
 }
 
-func (o *Overlay) addRules(entry store.Entry, policies map[string]netlink.XfrmPolicy) error {
+func (o *Overlay) addRules(entry store.Entry, existingPolicies map[string]netlink.XfrmPolicy, policiesToAdd map[string]netlink.XfrmPolicy) error {
 	localIp := net.ParseIP(o.db.LocalIpAddress())
 	remoteHostIp := net.ParseIP(entry.HostIpAddress)
 
@@ -397,15 +428,11 @@ func (o *Overlay) addRules(entry store.Entry, policies map[string]netlink.XfrmPo
 	var lastErr error
 	for _, policy := range []netlink.XfrmPolicy{outPolicy, inPolicy, fwdPolicy} {
 		key := toKey(&policy)
-		if _, ok := policies[key]; !ok {
-			if err := netlink.XfrmPolicyAdd(&policy); err != nil {
-				logrus.Errorf("Failed to add policy: %+v, %v", policy, err)
-				lastErr = err
-			} else {
-				logrus.Infof("Added policy: %+v", policy)
-			}
+		if _, ok := existingPolicies[key]; ok {
+			delete(existingPolicies, key)
+		} else {
+			policiesToAdd[key] = policy
 		}
-		delete(policies, key)
 	}
 
 	return lastErr

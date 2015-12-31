@@ -32,7 +32,8 @@ type Records struct {
 
 func NewSimpleStore(file, localIp string) *Simple {
 	s := &Simple{
-		file: file,
+		file:       file,
+		ipOverride: localIp,
 	}
 	return s
 }

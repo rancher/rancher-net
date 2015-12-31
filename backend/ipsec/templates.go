@@ -89,7 +89,7 @@ func (t *Templates) NewIkeConf() goStrongswanVici.IKEConf {
 func (t *Templates) NewChildSaConf() goStrongswanVici.ChildSAConf {
 	var resp goStrongswanVici.ChildSAConf
 	// Should never fail because we checked this in Reload()
-	json.Unmarshal(t.ikeConfTemplate, &resp)
+	json.Unmarshal(t.childSaConfTemplate, &resp)
 	return resp
 }
 

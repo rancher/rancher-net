@@ -1,6 +1,6 @@
 package backend
 
 type Backend interface {
-	Start()
+	Start(logFile string)
 	Reload() error
 }
