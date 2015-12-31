@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+cd $(dirname $0)/..
+
+CONTENT=$(</proc/sys/kernel/random/uuid)
+
+rm -rf dist/artifacts
+
+mkdir -p build/${CONTENT}
+mkdir -p dist/artifacts
+
+strip --strip-debug bin/*
+cp -rf apply.sh bin strongswan build/${CONTENT}
+
+cd build
+
+sha1sum -b $(find ${CONTENT} -type f) > ${CONTENT}/SHA1SUMS
+sha1sum ${CONTENT}/SHA1SUMS > ${CONTENT}/SHA1SUMSSUM
+
+tar czf ../dist/artifacts/rancher-net.tar.gz ${CONTENT}
+echo Created dist/artifacts/rancher-net.tar.gz
