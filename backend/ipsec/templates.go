@@ -20,7 +20,7 @@ const (
 var (
 	defaultIkeConf = []byte(`{
 		"local_addrs": [],
-		"proposals": ["aes256gcm16-aesxcbc-modp2048"],
+		"proposals": ["aes128gcm16-sha256-modp2048"],
 		"encap": "yes",
 		"local": {
 			"auth": "psk"
@@ -32,7 +32,7 @@ var (
 	defaultChildSaConf = []byte(`{
 		"local_ts": ["0.0.0.0/0"],
 		"remote_ts": ["0.0.0.0/0"],
-		"esp_proposals":  ["aes256gcm16-modp2048"],
+		"esp_proposals":  ["aes128gcm16-modp2048"],
 		"start_action": "start",
 		"close_action": "start",
 		"mode": "tunnel",
