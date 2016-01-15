@@ -131,6 +131,10 @@ func (o *Overlay) configure() error {
 		firstErr = handleErr(firstErr, err, "Failed to list rules for: %v", err)
 	}
 
+	if err := o.loadSharedKey(""); err != nil {
+		firstErr = handleErr(firstErr, err, "Failed to load key for %any: %v", err)
+	}
+
 	for _, entry := range o.db.Entries() {
 		if entry.Peer {
 			if err := o.loadSharedKey(entry.IpAddress); err != nil {
