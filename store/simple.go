@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"strings"
 	"sync"
 )
 
@@ -86,10 +87,12 @@ func (s *Simple) Reload() error {
 			continue
 		}
 
+		ipNoCidr := strings.Split(entry.IpAddress, "/")[0]
+
 		if entry.HostIpAddress == self.HostIpAddress {
-			local[entry.IpAddress] = entry
+			local[ipNoCidr] = entry
 		} else {
-			remote[entry.IpAddress] = entry
+			remote[ipNoCidr] = entry
 		}
 
 		filteredEntries = append(filteredEntries, entry)
@@ -138,12 +141,6 @@ func (s *Simple) IsRemote(ipAddress string) bool {
 
 	if _, ok := config.local[ipAddress]; ok {
 		return false
-	}
-
-	ip := net.ParseIP(ipAddress)
-
-	if config.cidrNetwork.Contains(ip) {
-		return true
 	}
 
 	_, ok := config.remote[ipAddress]
