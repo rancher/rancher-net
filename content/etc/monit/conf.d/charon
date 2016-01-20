@@ -1,0 +1,3 @@
+ check process charon with pidfile /var/run/charon.pid
+   start program = "/etc/init.d/charon start"
+   stop  program = "/etc/init.d/charon stop"

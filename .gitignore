@@ -1,3 +1,5 @@
 /bin
 /dist
 /strongswan
+/.trash-cache
+/.dapper

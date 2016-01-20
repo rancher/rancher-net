@@ -7,6 +7,8 @@ import (
 	"net"
 	"strings"
 	"sync"
+
+	"github.com/Sirupsen/logrus"
 )
 
 type Simple struct {
@@ -140,9 +142,13 @@ func (s *Simple) IsRemote(ipAddress string) bool {
 	config := s.getConfig()
 
 	if _, ok := config.local[ipAddress]; ok {
+		logrus.Debugf("Local: %s", ipAddress)
 		return false
 	}
 
 	_, ok := config.remote[ipAddress]
+	if ok {
+		logrus.Debugf("Remote: %s", ipAddress)
+	}
 	return ok
 }

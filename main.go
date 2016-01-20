@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -34,6 +35,12 @@ func main() {
 		},
 		cli.StringFlag{
 			Name: "charon-log",
+		},
+		cli.BoolFlag{
+			Name: "charon-launch",
+		},
+		cli.BoolFlag{
+			Name: "test-charon",
 		},
 		cli.BoolFlag{
 			Name: "debug",
@@ -69,6 +76,13 @@ func waitForFile(file string) string {
 }
 
 func appMain(ctx *cli.Context) error {
+	if ctx.GlobalBool("test-charon") {
+		if err := ipsec.Test(); err != nil {
+			log.Fatalf("Failed to talk to charon:", err)
+		}
+		os.Exit(0)
+	}
+
 	logFile := ctx.GlobalString("log")
 	if logFile != "" {
 		if output, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
@@ -92,7 +106,7 @@ func appMain(ctx *cli.Context) error {
 
 	db := store.NewSimpleStore(waitForFile(ctx.GlobalString("file")), ctx.GlobalString("local-ip"))
 	overlay := ipsec.NewOverlay(ctx.GlobalString("ipsec-config"), db)
-	overlay.Start(ctx.GlobalString("charon-log"))
+	overlay.Start(ctx.GlobalBool("charon-launch"), ctx.GlobalString("charon-log"))
 	if err := overlay.Reload(); err != nil {
 		return err
 	}

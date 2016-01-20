@@ -24,6 +24,7 @@ const (
 	reqId    = 1234
 	reqIdStr = "1234"
 	pskFile  = "psk.txt"
+	pidFile  = "/var/run/charon.pid"
 )
 
 type Overlay struct {
@@ -36,6 +37,7 @@ type Overlay struct {
 	templates   Templates
 	db          store.Store
 	psk         string
+	unknownSpis map[string]bool
 }
 
 func NewOverlay(configDir string, db store.Store) *Overlay {
@@ -44,13 +46,67 @@ func NewOverlay(configDir string, db store.Store) *Overlay {
 		templates: Templates{
 			ConfigDir: configDir,
 		},
-		keys:  map[string]string{},
-		hosts: map[string]string{},
+		keys:        map[string]string{},
+		hosts:       map[string]string{},
+		unknownSpis: map[string]bool{},
 	}
 }
 
-func (o *Overlay) Start(logFile string) {
-	go runCharon(logFile)
+func (o *Overlay) Start(launch bool, logFile string) {
+	if launch {
+		go runCharon(logFile)
+	} else {
+		go monitorCharon()
+	}
+
+	if err := o.loadConns(); err != nil {
+		logrus.Fatalf("Failed to load connections from charon: %v", err)
+	}
+
+	go func() {
+		for {
+			time.Sleep(5 * time.Second)
+			if err := o.gcSpis(); err != nil {
+				logrus.Errorf("Failed to clean up SAs due to: %v", err)
+			}
+		}
+	}()
+}
+
+func Test() error {
+	client, err := getClient()
+	if err != nil {
+		return err
+	}
+
+	if _, err := client.ListConns(""); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *Overlay) loadConns() error {
+	client, err := getClient()
+	if err != nil {
+		return err
+	}
+
+	conns, err := client.ListConns("")
+	if err != nil {
+		return err
+	}
+
+	for _, conn := range conns {
+		for k := range conn {
+			if strings.HasPrefix(k, "conn-") {
+				logrus.Infof("Found existing connection: %s", k)
+				o.hosts[strings.TrimPrefix(k, "conn-")] = o.templates.Revision()
+			}
+		}
+	}
+
+	return nil
 }
 
 func (o *Overlay) Reload() error {
@@ -65,6 +121,24 @@ func (o *Overlay) Reload() error {
 	o.psk = strings.TrimSpace(string(content))
 
 	return o.configure()
+}
+
+func monitorCharon() {
+	pid := ""
+	for {
+		newPidBytes, err := ioutil.ReadFile(pidFile)
+		if err != nil {
+			logrus.Fatalf("Failed to read %s", pidFile)
+		}
+		newPid := strings.TrimSpace(string(newPidBytes))
+		if pid == "" {
+			pid = newPid
+			logrus.Infof("Charon running PID: %s", pid)
+		} else if pid != newPid {
+			logrus.Fatalf("Charon restarted, old PID: %s, new PID: %s", pid, newPid)
+		}
+		time.Sleep(2 * time.Second)
+	}
 }
 
 func runCharon(logFile string) {
@@ -172,6 +246,44 @@ func (o *Overlay) configure() error {
 	}
 
 	return firstErr
+}
+
+func (o *Overlay) gcSpis() error {
+	previouslyUnknown := o.unknownSpis
+	o.unknownSpis = map[string]bool{}
+
+	client, err := getClient()
+	conns, err := client.ListAllVpnConnInfo()
+	if err != nil {
+		return err
+	}
+
+	knownSpis := map[string]bool{}
+	for _, conn := range conns {
+		for _, i := range []string{conn.Child_sas.Spi_in, conn.Child_sas.Spi_out} {
+			if i != "" {
+				knownSpis[i] = true
+			}
+		}
+	}
+
+	stateList, err := netlink.XfrmStateList(netlink.FAMILY_V4)
+	if err != nil {
+		return err
+	}
+	for _, state := range stateList {
+		spi := fmt.Sprintf("%x", state.Spi)
+		if !knownSpis[spi] {
+			if previouslyUnknown[spi] {
+				logrus.Infof("Deleting unknown SPI %s: %#v", spi, state)
+				netlink.XfrmStateDel(&state)
+			} else {
+				o.unknownSpis[spi] = true
+			}
+		}
+	}
+
+	return nil
 }
 
 func (o *Overlay) deletePolicies(policies map[string]netlink.XfrmPolicy) error {

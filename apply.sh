@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 source ${CATTLE_HOME:-/var/lib/cattle}/common/scripts.sh
 
@@ -12,16 +13,24 @@ mv bin content-home
 STRONGSWAN=$(echo strongswan/*)
 STAMP=/usr/local/.$(basename $STRONGSWAN)
 
-if [ ! -e $STAMP ]; then
+if [[ -e "$STRONGSWAN" && ! -e $STAMP ]]; then
     echo Extracting $STRONGSWAN
     tar xf $STRONGSWAN -C /
     touch $STAMP
 fi
 
-stage_files
-
 # Make sure that when node start is doesn't think it holds the config.sh lock
 unset CATTLE_CONFIG_FLOCKER
+
+killall -9 rancher-net || true
+/etc/init.d/rancher-net stop || true
+killall -HUP charon || true
+if ! $CATTLE_HOME/bin/rancher-net --test-charon; then
+    # If we can't talk to charon, restart it
+    killall -9 charon || true
+fi
+
+stage_files
 
 if /etc/init.d/rancher-net status; then
     /etc/init.d/rancher-net restart

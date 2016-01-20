@@ -1,21 +1,21 @@
 #!/bin/bash
 ### BEGIN INIT INFO
-# Provides:		rancher-net
+# Provides:		charon
 # Default-Start:	2 3 4 5
 # Default-Stop:		0 1 6
-# Short-Description:	rancher-net - Rancher Networking server
-# Description:		rancher-net - Rancher Networking server
+# Short-Description:	charon - Rancher Networking server
+# Description:		charon - Rancher Networking server
 ### END INIT INFO
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 CATTLE_HOME=${CATTLE_HOME:-/var/lib/cattle}
-export PIDFILE=/var/run/rancher-net.pid
-RUNDIR=$CATTLE_HOME
-DAEMON=$RUNDIR/bin/rancher-net
-RUNNING_DAEMON=$CATTLE_HOME/bin/rancher-net
-DAEMON_ARGS="--log /var/log/rancher-net.log -f ${CATTLE_HOME}/etc/cattle/ipsec/config.json -c ${CATTLE_HOME}/etc/cattle/ipsec -i $(ip route get 8.8.8.8 | grep via | awk '{print $7}')/16 --pid-file ${PIDFILE}"
-NAME=rancher-net
-DESC=rancher-net
+export PIDFILE=/var/run/charon.pid
+RUNDIR=/usr/local/sbin
+DAEMON=$RUNDIR/charon
+RUNNING_DAEMON=$DAEMON
+DEBUG_LEVEL=1
+NAME=charon
+DESC=charon
 
 if [ ! -x $DAEMON ]; then
     chmod +x $DAEMON
@@ -28,17 +28,14 @@ then
 	. /etc/default/$NAME
 fi
 
+DAEMON_ARGS="--debug-dmn $DEBUG_LEVEL --debug-mgr $DEBUG_LEVEL --debug-ike $DEBUG_LEVEL --debug-chd $DEBUG_LEVEL --debug-cfg $DEBUG_LEVEL --debug-knl $DEBUG_LEVEL --debug-net $DEBUG_LEVEL --debug-asn $DEBUG_LEVEL --debug-tnc $DEBUG_LEVEL --debug-imc $DEBUG_LEVEL --debug-imv $DEBUG_LEVEL --debug-pts $DEBUG_LEVEL --debug-tls $DEBUG_LEVEL --debug-esp $DEBUG_LEVEL --debug-lib $DEBUG_LEVEL"
+
 . /lib/lsb/init-functions
 
 set -e
 
 case "$1" in
   start)
-	if ! $CATTLE_HOME/bin/rancher-net --test-charon; then
-	    # If we can't talk to charon, restart it
-	    killall -9 charon || true
-	fi
-
 	log_daemon_msg "Starting $DESC configuration" "$NAME" || true
 	mkdir -p $RUNDIR
 
