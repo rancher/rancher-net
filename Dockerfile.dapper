@@ -1,4 +1,4 @@
-FROM golang:1.5
+FROM golang:1.5.3
 RUN go get github.com/imikushin/trash
 ENV DAPPER_SOURCE /go/src/github.com/rancher/rancher-net/
 ENV DAPPER_OUTPUT bin dist

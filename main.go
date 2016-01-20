@@ -15,8 +15,13 @@ import (
 	"github.com/rancher/rancher-net/store"
 )
 
+var (
+	VERSION = "0.0.0"
+)
+
 func main() {
 	app := cli.NewApp()
+	app.Version = VERSION
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name: "log",
