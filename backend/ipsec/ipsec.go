@@ -37,7 +37,7 @@ type Overlay struct {
 	templates   Templates
 	db          store.Store
 	psk         string
-	unknownSpis map[string]bool
+	unknownSpis map[string]int
 }
 
 func NewOverlay(configDir string, db store.Store) *Overlay {
@@ -48,7 +48,7 @@ func NewOverlay(configDir string, db store.Store) *Overlay {
 		},
 		keys:        map[string]string{},
 		hosts:       map[string]string{},
-		unknownSpis: map[string]bool{},
+		unknownSpis: map[string]int{},
 	}
 }
 
@@ -56,7 +56,7 @@ func (o *Overlay) Start(launch bool, logFile string) {
 	if launch {
 		go runCharon(logFile)
 	} else {
-		go monitorCharon()
+		go o.monitorCharon()
 	}
 
 	if err := o.loadConns(); err != nil {
@@ -66,7 +66,7 @@ func (o *Overlay) Start(launch bool, logFile string) {
 	go func() {
 		for {
 			time.Sleep(5 * time.Second)
-			if err := o.gcSpis(); err != nil {
+			if err := o.cleanup(); err != nil {
 				logrus.Errorf("Failed to clean up SAs due to: %v", err)
 			}
 		}
@@ -78,6 +78,7 @@ func Test() error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	if _, err := client.ListConns(""); err != nil {
 		return err
@@ -87,15 +88,21 @@ func Test() error {
 }
 
 func (o *Overlay) loadConns() error {
+	o.Lock()
+	defer o.Unlock()
+
 	client, err := getClient()
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	conns, err := client.ListConns("")
 	if err != nil {
 		return err
 	}
+
+	o.hosts = map[string]string{}
 
 	for _, conn := range conns {
 		for k := range conn {
@@ -123,7 +130,7 @@ func (o *Overlay) Reload() error {
 	return o.configure()
 }
 
-func monitorCharon() {
+func (o *Overlay) monitorCharon() {
 	pid := ""
 	for {
 		newPidBytes, err := ioutil.ReadFile(pidFile)
@@ -136,6 +143,13 @@ func monitorCharon() {
 			logrus.Infof("Charon running PID: %s", pid)
 		} else if pid != newPid {
 			logrus.Fatalf("Charon restarted, old PID: %s, new PID: %s", pid, newPid)
+		} else {
+			o.Lock()
+			if err := Test(); err != nil {
+				logrus.Errorf("Killing charon due to: %v", err)
+				o.killCharon(pid)
+			}
+			o.Unlock()
 		}
 		time.Sleep(2 * time.Second)
 	}
@@ -187,6 +201,7 @@ func handleErr(firstErr, err error, fmt string, args ...interface{}) error {
 func (o *Overlay) configure() error {
 	o.Lock()
 	defer o.Unlock()
+	logrus.Infof("Reconfiguring")
 
 	if err := o.templates.Reload(); err != nil {
 		return err
@@ -248,21 +263,96 @@ func (o *Overlay) configure() error {
 	return firstErr
 }
 
-func (o *Overlay) gcSpis() error {
+func (o *Overlay) killCharon(pid string) {
+	pidNum, err := strconv.Atoi(pid)
+	if err == nil {
+		err = syscall.Kill(pidNum, syscall.SIGKILL)
+	}
+
+	if err != nil {
+		logrus.Error("Can't kill %s: %v", pid, err)
+	}
+}
+
+func (o *Overlay) cleanup() error {
+	changed := false
+	defer func() {
+		if !changed {
+			return
+		}
+
+		time.Sleep(2 * time.Second)
+
+		if err := o.loadConns(); err != nil {
+			logrus.Errorf("Failed to reload connections: %v", err)
+		}
+		if err := o.configure(); err != nil {
+			logrus.Errorf("Failed to reconfigure: %v", err)
+		}
+	}()
+
+	o.Lock()
+	defer o.Unlock()
+
 	previouslyUnknown := o.unknownSpis
-	o.unknownSpis = map[string]bool{}
+	o.unknownSpis = map[string]int{}
 
 	client, err := getClient()
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
 	conns, err := client.ListAllVpnConnInfo()
 	if err != nil {
 		return err
 	}
 
 	knownSpis := map[string]bool{}
+	badConns := map[string]bool{}
 	for _, conn := range conns {
-		for _, i := range []string{conn.Child_sas.Spi_in, conn.Child_sas.Spi_out} {
-			if i != "" {
-				knownSpis[i] = true
+		if conn.Local_host != "127.0.0.1" && conn.Local_host != o.db.LocalIpAddress() {
+			badConns[conn.IkeSaName] = true
+			if conn.ChildSaName != "" {
+				logrus.Infof("Terminating connection: %s %s != %s", conn.IkeSaName, conn.Local_host, o.db.LocalIpAddress())
+				err := client.Terminate(&goStrongswanVici.TerminateRequest{
+					Ike: conn.IkeSaName,
+				})
+				if err != nil {
+					logrus.Infof("Failed to termination connection %s: %v", conn.ChildSaName, err)
+				}
+			}
+		}
+
+		children := []goStrongswanVici.Child_sas{conn.Child_sas}
+		for _, child := range conn.IkeSa.Child_sas {
+			children = append(children, child)
+		}
+
+		for _, child := range children {
+			for _, i := range []string{child.Spi_in, child.Spi_out} {
+				if i != "" {
+					if badConns[conn.IkeSaName] {
+						previouslyUnknown[i] = 4
+					} else {
+						knownSpis[i] = true
+					}
+				}
+			}
+		}
+	}
+
+	if len(badConns) > 0 {
+		changed = true
+
+		logrus.Infof("Bad connections %v", badConns)
+		for badConn, _ := range badConns {
+			logrus.Infof("Deleting %s", badConn)
+			err := client.UnloadConn(&goStrongswanVici.UnloadConnRequest{
+				Name: badConn,
+			})
+			if err != nil {
+				logrus.Infof("Failed to delete %s: %v", badConn, err)
 			}
 		}
 	}
@@ -274,13 +364,17 @@ func (o *Overlay) gcSpis() error {
 	for _, state := range stateList {
 		spi := fmt.Sprintf("%x", state.Spi)
 		if !knownSpis[spi] {
-			if previouslyUnknown[spi] {
+			if previouslyUnknown[spi] > 3 {
 				logrus.Infof("Deleting unknown SPI %s: %#v", spi, state)
 				netlink.XfrmStateDel(&state)
 			} else {
-				o.unknownSpis[spi] = true
+				o.unknownSpis[spi] = previouslyUnknown[spi] + 1
 			}
 		}
+	}
+
+	if len(o.unknownSpis) > 0 {
+		logrus.Infof("Unknown SPIs: %#v, Conns: %#v", o.unknownSpis, conns)
 	}
 
 	return nil
@@ -351,6 +445,7 @@ func (o *Overlay) removeHost(host string) error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	name := "conn-" + strings.Split(host, "/")[0]
 	logrus.Infof("Removing connection for %s", name)
@@ -458,6 +553,7 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 
 	o.hosts[entry.HostIpAddress] = o.templates.Revision()
 	logrus.Infof("Loaded connection: %v", name)
+
 	return nil
 }
 

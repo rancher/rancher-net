@@ -1,9 +1,14 @@
 #!/bin/bash
 
-VERSION=$(git tag -l --contains HEAD | head -n 1)
-if [ -z "$VERSION" ]; then
-    VERSION=$(git rev-parse --short HEAD)
-    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-        VERSION="$VERSION-dirty"
-    fi
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+    DIRTY="-dirty"
+fi
+
+COMMIT=$(git rev-parse --short HEAD)
+TAG=$(git tag -l --contains HEAD | head -n 1)
+
+if [[ -z "$DIRTY" && -n "$TAG" ]]; then
+    VERSION=$TAG
+else
+    VERSION="${COMMIT}${DIRTY}"
 fi

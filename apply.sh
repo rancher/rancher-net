@@ -23,7 +23,6 @@ fi
 unset CATTLE_CONFIG_FLOCKER
 
 killall -9 rancher-net || true
-/etc/init.d/rancher-net stop || true
 killall -HUP charon || true
 if ! $CATTLE_HOME/bin/rancher-net --test-charon; then
     # If we can't talk to charon, restart it
@@ -31,9 +30,3 @@ if ! $CATTLE_HOME/bin/rancher-net --test-charon; then
 fi
 
 stage_files
-
-if /etc/init.d/rancher-net status; then
-    /etc/init.d/rancher-net restart
-else
-    /etc/init.d/rancher-net start
-fi
