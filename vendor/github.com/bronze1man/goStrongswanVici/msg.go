@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"strconv"
 )
 
 type segmentType byte
@@ -301,6 +302,19 @@ func readKeyString(r *bufio.Reader) (key string, msg string, err error) {
 	return
 }
 
+func getKey(key string, msg map[string]interface{}) string {
+	if _, ok := msg[key]; !ok {
+		return key
+	}
+
+	for i := 0; ; i++ {
+		newKey := key + "##" + strconv.Itoa(i)
+		if _, ok := msg[newKey]; !ok {
+			return newKey
+		}
+	}
+}
+
 //SECTION_START has been read already.
 func readMap(r *bufio.Reader, isRoot bool) (msg map[string]interface{}, err error) {
 	msg = map[string]interface{}{}
@@ -318,19 +332,19 @@ func readMap(r *bufio.Reader, isRoot bool) (msg map[string]interface{}, err erro
 			if err != nil {
 				return nil, err
 			}
-			msg[key] = value
+			msg[getKey(key, msg)] = value
 		case etLIST_START:
 			key, value, err := readKeyList(r)
 			if err != nil {
 				return nil, err
 			}
-			msg[key] = value
+			msg[getKey(key, msg)] = value
 		case etKEY_VALUE:
 			key, value, err := readKeyString(r)
 			if err != nil {
 				return nil, err
 			}
-			msg[key] = value
+			msg[getKey(key, msg)] = value
 		case etSECTION_END: //end of outer section
 			return msg, nil
 		default:
