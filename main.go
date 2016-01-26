@@ -38,6 +38,10 @@ func main() {
 			Value: ".",
 			Usage: "Configuration directory",
 		},
+		cli.BoolTFlag{
+			Name:  "gcm",
+			Usage: "GCM mode Supported",
+		},
 		cli.StringFlag{
 			Name: "charon-log",
 		},
@@ -111,6 +115,10 @@ func appMain(ctx *cli.Context) error {
 
 	db := store.NewSimpleStore(waitForFile(ctx.GlobalString("file")), ctx.GlobalString("local-ip"))
 	overlay := ipsec.NewOverlay(ctx.GlobalString("ipsec-config"), db)
+	if !ctx.GlobalBool("gcm") {
+		overlay.Blacklist = []string{"aes128gcm16"}
+	}
+
 	overlay.Start(ctx.GlobalBool("charon-launch"), ctx.GlobalString("charon-log"))
 	if err := overlay.Reload(); err != nil {
 		return err

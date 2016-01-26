@@ -38,6 +38,7 @@ type Overlay struct {
 	db          store.Store
 	psk         string
 	unknownSpis map[string]int
+	Blacklist   []string
 }
 
 func NewOverlay(configDir string, db store.Store) *Overlay {
@@ -513,6 +514,19 @@ func (o *Overlay) loadSharedKey(ipAddress string) error {
 	return nil
 }
 
+func (o *Overlay) filterAlgos(algos []string) []string {
+	ret := []string{}
+	for _, algo := range algos {
+		for _, ignore := range o.Blacklist {
+			if !strings.HasPrefix(algo, ignore) {
+				ret = append(ret, algo)
+			}
+		}
+	}
+
+	return ret
+}
+
 func (o *Overlay) addHostConnection(entry store.Entry) error {
 	o.hostAttempt[entry.HostIpAddress] = true
 	if o.hosts[entry.HostIpAddress] == o.templates.Revision() {
@@ -527,9 +541,11 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 	defer client.Close()
 
 	childSAConf := o.templates.NewChildSaConf()
+	childSAConf.ESPProposals = o.filterAlgos(childSAConf.ESPProposals)
 	childSAConf.ReqID = reqIdStr
 
 	ikeConf := o.templates.NewIkeConf()
+	ikeConf.Proposals = o.filterAlgos(ikeConf.Proposals)
 	ikeConf.RemoteAddrs = []string{entry.HostIpAddress}
 	ikeConf.Children = map[string]goStrongswanVici.ChildSAConf{
 		"child-" + entry.HostIpAddress: childSAConf,
