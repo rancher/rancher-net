@@ -22,11 +22,13 @@ fi
 # Make sure that when node start is doesn't think it holds the config.sh lock
 unset CATTLE_CONFIG_FLOCKER
 
-killall -9 rancher-net || true
-killall -HUP charon || true
-if ! $CATTLE_HOME/bin/rancher-net --test-charon; then
-    # If we can't talk to charon, restart it
-    killall -9 charon || true
+if [ "$CATTLE_AGENT_STARTUP" != "true" ]; then
+    killall -9 rancher-net || true
+    killall -HUP charon || true
+    if ! $CATTLE_HOME/bin/rancher-net --test-charon; then
+        # If we can't talk to charon, restart it
+        killall -9 charon || true
+    fi
 fi
 
 stage_files

@@ -16,6 +16,13 @@ RUNNING_DAEMON=$CATTLE_HOME/bin/rancher-net
 DAEMON_ARGS="--log /var/log/rancher-net.log -f ${CATTLE_HOME}/etc/cattle/ipsec/config.json -c ${CATTLE_HOME}/etc/cattle/ipsec -i $(ip route get 8.8.8.8 | grep via | awk '{print $7}')/16 --pid-file ${PIDFILE}"
 NAME=rancher-net
 DESC=rancher-net
+GCM=false
+
+if ip xfrm state add src 1.1.1.1 dst 1.1.1.1 spi 42 proto esp mode tunnel aead "rfc4106(gcm(aes))" 0x0000000000000000000000000000000000000001 128 sel src 1.1.1.1 dst 1.1.1.1; then
+    GCM=true
+fi
+
+DAEMON_ARGS="$DAEMON_ARGS --gcm=$GCM"
 
 if [ ! -x $DAEMON ]; then
     chmod +x $DAEMON
