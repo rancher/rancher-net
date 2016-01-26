@@ -18,6 +18,7 @@ NAME=rancher-net
 DESC=rancher-net
 GCM=false
 
+ip xfrm state del src 1.1.1.1 dst 1.1.1.1 spi 42 proto esp 2>/dev/null || true
 if ip xfrm state add src 1.1.1.1 dst 1.1.1.1 spi 42 proto esp mode tunnel aead "rfc4106(gcm(aes))" 0x0000000000000000000000000000000000000001 128 sel src 1.1.1.1 dst 1.1.1.1; then
     GCM=true
 fi
