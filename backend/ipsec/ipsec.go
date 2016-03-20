@@ -543,6 +543,9 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 	childSAConf := o.templates.NewChildSaConf()
 	childSAConf.ESPProposals = o.filterAlgos(childSAConf.ESPProposals)
 	childSAConf.ReqID = reqIdStr
+	if strings.Compare(entry.HostIpAddress, o.db.LocalHostIpAddress()) < 0 {
+		childSAConf.RekeyTime = "8760h"
+	}
 
 	ikeConf := o.templates.NewIkeConf()
 	ikeConf.Proposals = o.filterAlgos(ikeConf.Proposals)
