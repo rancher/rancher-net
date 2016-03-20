@@ -18,11 +18,6 @@ NAME=rancher-net
 DESC=rancher-net
 GCM=false
 
-ip xfrm state del src 1.1.1.1 dst 1.1.1.1 spi 42 proto esp 2>/dev/null || true
-if ip xfrm state add src 1.1.1.1 dst 1.1.1.1 spi 42 proto esp mode tunnel aead "rfc4106(gcm(aes))" 0x0000000000000000000000000000000000000001 128 sel src 1.1.1.1 dst 1.1.1.1; then
-    GCM=true
-fi
-
 DAEMON_ARGS="$DAEMON_ARGS --gcm=$GCM"
 
 if [ ! -x $DAEMON ]; then
@@ -42,6 +37,15 @@ set -e
 
 case "$1" in
   start)
+	for ((i=0; i<6; i=0)); do
+		if ip xfrm state add src 1.1.1.1 dst 1.1.1.1 spi 42 proto esp mode tunnel aead "rfc4106(gcm(aes))" 0x0000000000000000000000000000000000000001 128 sel src 1.1.1.1 dst 1.1.1.1; then
+			GCM=true
+			break
+		fi
+		ip xfrm state del src 1.1.1.1 dst 1.1.1.1 spi 42 proto esp 2>/dev/null || true
+		sleep 1
+	done
+
 	if ! $CATTLE_HOME/bin/rancher-net --test-charon; then
 	    # If we can't talk to charon, restart it
 	    killall -9 charon || true
