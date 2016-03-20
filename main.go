@@ -120,9 +120,6 @@ func appMain(ctx *cli.Context) error {
 	}
 
 	overlay.Start(ctx.GlobalBool("charon-launch"), ctx.GlobalString("charon-log"))
-	if err := overlay.Reload(); err != nil {
-		return err
-	}
 
 	done := make(chan error)
 	go func() {
@@ -135,6 +132,10 @@ func appMain(ctx *cli.Context) error {
 		}
 		done <- s.ListenAndServe(ctx.GlobalString("listen"))
 	}()
+
+	if err := overlay.Reload(); err != nil {
+		return err
+	}
 
 	return <-done
 }
