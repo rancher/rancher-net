@@ -18,8 +18,6 @@ NAME=rancher-net
 DESC=rancher-net
 GCM=false
 
-DAEMON_ARGS="$DAEMON_ARGS --gcm=$GCM"
-
 if [ ! -x $DAEMON ]; then
     chmod +x $DAEMON
 fi
@@ -45,6 +43,8 @@ case "$1" in
 		ip xfrm state del src 1.1.1.1 dst 1.1.1.1 spi 42 proto esp 2>/dev/null || true
 		sleep 1
 	done
+
+	DAEMON_ARGS="$DAEMON_ARGS --gcm=$GCM"
 
 	if ! $CATTLE_HOME/bin/rancher-net --test-charon; then
 	    # If we can't talk to charon, restart it
