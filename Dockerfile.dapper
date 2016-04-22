@@ -1,8 +1,7 @@
-FROM golang:1.5.3
-RUN go get github.com/imikushin/trash
+FROM armhf/golang:1.6
+RUN go get github.com/rancher/trash
 ENV DAPPER_SOURCE /go/src/github.com/rancher/rancher-net/
 ENV DAPPER_OUTPUT bin dist
-ENV GO15VENDOREXPERIMENT 1
 ENV HOME ${DAPPER_SOURCE}
 WORKDIR ${DAPPER_SOURCE}
 ENTRYPOINT ["./scripts/entry"]
