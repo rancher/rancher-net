@@ -3,6 +3,9 @@ set -e
 
 cd $(dirname $0)/..
 
+ARCH=${ARCH:?"ARCH not set"}
+SUFFIX=""
+[ "${ARCH}" != "amd64" ] && SUFFIX="_${ARCH}"
 CONTENT=$(</proc/sys/kernel/random/uuid)
 
 rm -rf dist/artifacts
@@ -18,5 +21,5 @@ cd build
 sha1sum -b $(find ${CONTENT} -type f) > ${CONTENT}/SHA1SUMS
 sha1sum ${CONTENT}/SHA1SUMS > ${CONTENT}/SHA1SUMSSUM
 
-tar czf ../dist/artifacts/rancher-net.tar.gz ${CONTENT}
-echo Created dist/artifacts/rancher-net.tar.gz
+tar czf ../dist/artifacts/rancher-net${SUFFIX}.tar.gz ${CONTENT}
+echo Created dist/artifacts/rancher-net${SUFFIX}.tar.gz

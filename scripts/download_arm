@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+cd $(dirname $0)/..
+
+VERSION=5.4.0-r3
+SUFFIX=_arm
+HASH=f6020d1d738e3aaabe5ac0fae3dba814bcb2eb27
+
+if [ "$(sha1sum -b strongswan/strongswan-${VERSION}${SUFFIX}.tar.gz | awk '{print $1}')" != "$HASH" ]; then
+    mkdir -p strongswan
+    curl -L https://github.com/imikushin/strongswan-package/releases/download/v${VERSION}/strongswan-${VERSION}${SUFFIX}.tar.gz > strongswan/strongswan-${VERSION}${SUFFIX}.tar.gz
+    [ "$(sha1sum -b strongswan/strongswan-${VERSION}${SUFFIX}.tar.gz | awk '{print $1}')" == "$HASH" ]
+fi
