@@ -37,7 +37,6 @@ type Overlay struct {
 	templates   Templates
 	db          store.Store
 	psk         string
-	unknownSpis map[string]int
 	Blacklist   []string
 }
 
@@ -47,9 +46,8 @@ func NewOverlay(configDir string, db store.Store) *Overlay {
 		templates: Templates{
 			ConfigDir: configDir,
 		},
-		keys:        map[string]string{},
-		hosts:       map[string]string{},
-		unknownSpis: map[string]int{},
+		keys:  map[string]string{},
+		hosts: map[string]string{},
 	}
 }
 
@@ -64,14 +62,6 @@ func (o *Overlay) Start(launch bool, logFile string) {
 		logrus.Fatalf("Failed to load connections from charon: %v", err)
 	}
 
-	go func() {
-		for {
-			time.Sleep(5 * time.Second)
-			if err := o.cleanup(); err != nil {
-				logrus.Errorf("Failed to clean up SAs due to: %v", err)
-			}
-		}
-	}()
 }
 
 func Test() error {
@@ -273,112 +263,6 @@ func (o *Overlay) killCharon(pid string) {
 	if err != nil {
 		logrus.Error("Can't kill %s: %v", pid, err)
 	}
-}
-
-func (o *Overlay) cleanup() error {
-	changed := false
-	defer func() {
-		if !changed {
-			return
-		}
-
-		time.Sleep(2 * time.Second)
-
-		if err := o.loadConns(); err != nil {
-			logrus.Errorf("Failed to reload connections: %v", err)
-		}
-		if err := o.configure(); err != nil {
-			logrus.Errorf("Failed to reconfigure: %v", err)
-		}
-	}()
-
-	o.Lock()
-	defer o.Unlock()
-
-	previouslyUnknown := o.unknownSpis
-	o.unknownSpis = map[string]int{}
-
-	client, err := getClient()
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-
-	conns, err := client.ListAllVpnConnInfo()
-	if err != nil {
-		return err
-	}
-
-	knownSpis := map[string]bool{}
-	badConns := map[string]bool{}
-	for _, conn := range conns {
-		if conn.Local_host != "127.0.0.1" && conn.Local_host != o.db.LocalIpAddress() {
-			badConns[conn.IkeSaName] = true
-			if conn.ChildSaName != "" {
-				logrus.Infof("Terminating connection: %s %s != %s", conn.IkeSaName, conn.Local_host, o.db.LocalIpAddress())
-				err := client.Terminate(&goStrongswanVici.TerminateRequest{
-					Ike: conn.IkeSaName,
-				})
-				if err != nil {
-					logrus.Infof("Failed to termination connection %s: %v", conn.ChildSaName, err)
-				}
-			}
-		}
-
-		children := []goStrongswanVici.Child_sas{conn.Child_sas}
-		for _, child := range conn.IkeSa.Child_sas {
-			children = append(children, child)
-		}
-
-		for _, child := range children {
-			for _, i := range []string{child.Spi_in, child.Spi_out} {
-				if i != "" {
-					if badConns[conn.IkeSaName] {
-						previouslyUnknown[i] = 4
-					} else {
-						knownSpis[i] = true
-					}
-				}
-			}
-		}
-	}
-
-	if len(badConns) > 0 {
-		changed = true
-
-		logrus.Infof("Bad connections %v", badConns)
-		for badConn, _ := range badConns {
-			logrus.Infof("Deleting %s", badConn)
-			err := client.UnloadConn(&goStrongswanVici.UnloadConnRequest{
-				Name: badConn,
-			})
-			if err != nil {
-				logrus.Infof("Failed to delete %s: %v", badConn, err)
-			}
-		}
-	}
-
-	stateList, err := netlink.XfrmStateList(netlink.FAMILY_V4)
-	if err != nil {
-		return err
-	}
-	for _, state := range stateList {
-		spi := fmt.Sprintf("%x", state.Spi)
-		if !knownSpis[spi] {
-			if previouslyUnknown[spi] > 3 {
-				logrus.Infof("Deleting unknown SPI %s: %#v", spi, state)
-				netlink.XfrmStateDel(&state)
-			} else {
-				o.unknownSpis[spi] = previouslyUnknown[spi] + 1
-			}
-		}
-	}
-
-	if len(o.unknownSpis) > 0 {
-		logrus.Infof("Unknown SPIs: %#v, Conns: %#v", o.unknownSpis, conns)
-	}
-
-	return nil
 }
 
 func (o *Overlay) deletePolicies(policies map[string]netlink.XfrmPolicy) error {
@@ -614,9 +498,10 @@ func (o *Overlay) addRules(entry store.Entry, existingPolicies map[string]netlin
 	}
 
 	outPolicy := netlink.XfrmPolicy{
-		Src: ipNet,
-		Dst: ipDirectNet,
-		Dir: netlink.XFRM_DIR_OUT,
+		Src:      ipNet,
+		Dst:      ipDirectNet,
+		Dir:      netlink.XFRM_DIR_OUT,
+		Priority: 10000,
 		Tmpls: []netlink.XfrmPolicyTmpl{
 			{
 				Src:   localIp,
@@ -628,9 +513,10 @@ func (o *Overlay) addRules(entry store.Entry, existingPolicies map[string]netlin
 		},
 	}
 	inPolicy := netlink.XfrmPolicy{
-		Src: ipDirectNet,
-		Dst: ipNet,
-		Dir: netlink.XFRM_DIR_IN,
+		Src:      ipDirectNet,
+		Dst:      ipNet,
+		Dir:      netlink.XFRM_DIR_IN,
+		Priority: 10000,
 		Tmpls: []netlink.XfrmPolicyTmpl{
 			{
 				Src:   remoteHostIp,
@@ -642,9 +528,10 @@ func (o *Overlay) addRules(entry store.Entry, existingPolicies map[string]netlin
 		},
 	}
 	fwdPolicy := netlink.XfrmPolicy{
-		Src: ipDirectNet,
-		Dst: ipNet,
-		Dir: netlink.XFRM_DIR_FWD,
+		Src:      ipDirectNet,
+		Dst:      ipNet,
+		Dir:      netlink.XFRM_DIR_FWD,
+		Priority: 10000,
 		Tmpls: []netlink.XfrmPolicyTmpl{
 			{
 				Src:   remoteHostIp,
