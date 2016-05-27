@@ -401,10 +401,15 @@ func (o *Overlay) loadSharedKey(ipAddress string) error {
 func (o *Overlay) filterAlgos(algos []string) []string {
 	ret := []string{}
 	for _, algo := range algos {
+		add := true
 		for _, ignore := range o.Blacklist {
-			if !strings.HasPrefix(algo, ignore) {
-				ret = append(ret, algo)
+			if strings.HasPrefix(algo, ignore) {
+				add = false
+				break
 			}
+		}
+		if add {
+			ret = append(ret, algo)
 		}
 	}
 
@@ -455,7 +460,7 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 	}
 
 	o.hosts[entry.HostIpAddress] = o.templates.Revision()
-	logrus.Infof("Loaded connection: %v", name)
+	logrus.Infof("Loaded connection: %v, %v, %v", name, ikeConf.Proposals, childSAConf.ESPProposals)
 
 	return nil
 }

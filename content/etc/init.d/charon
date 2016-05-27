@@ -13,7 +13,6 @@ export PIDFILE=/var/run/charon.pid
 RUNDIR=/usr/local/sbin
 DAEMON=$RUNDIR/charon
 RUNNING_DAEMON=$DAEMON
-DEBUG_LEVEL=1
 NAME=charon
 DESC=charon
 
@@ -28,7 +27,7 @@ then
 	. /etc/default/$NAME
 fi
 
-DAEMON_ARGS="--debug-dmn $DEBUG_LEVEL --debug-mgr $DEBUG_LEVEL --debug-ike $DEBUG_LEVEL --debug-chd $DEBUG_LEVEL --debug-cfg $DEBUG_LEVEL --debug-knl $DEBUG_LEVEL --debug-net $DEBUG_LEVEL --debug-asn $DEBUG_LEVEL --debug-tnc $DEBUG_LEVEL --debug-imc $DEBUG_LEVEL --debug-imv $DEBUG_LEVEL --debug-pts $DEBUG_LEVEL --debug-tls $DEBUG_LEVEL --debug-esp $DEBUG_LEVEL --debug-lib $DEBUG_LEVEL"
+DAEMON_ARGS=""
 
 . /lib/lsb/init-functions
 
