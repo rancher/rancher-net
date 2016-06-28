@@ -9,7 +9,7 @@ import:
 - package: github.com/codegangsta/cli
   version: c31a7975863e7810c92e2e288a9ab074f9a88f29
 - package: github.com/bronze1man/goStrongswanVici
-  version: f72f9304550a76e9e7552783d69045bef3bc5aed
+  version: d5a3392280f3bdf6a76eb218ded092c9696d84dd
   repo:    https://github.com/rancher/goStrongswanVici.git
 - package: github.com/mdlayher/ethernet
   version: 28018267bba4d651e8e0fcbca8aae7c13f4ce4ae
