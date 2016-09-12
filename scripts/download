@@ -3,11 +3,12 @@ set -e
 
 cd $(dirname $0)/..
 
-VERSION=v5.5.0-rancher-1-2
-HASH=d7fdbc9a6bf9cde5e21cc6910c29d61035ef8f96
+VERSION=v5.5.0-rancher-1-3
+HASH=f4803ea02c98921e93bfc748031e11957fd21a41
 
 if [ "$(sha1sum -b strongswan/strongswan-${VERSION}.tar.gz | awk '{print $1}')" != "$HASH" ]; then
     mkdir -p strongswan
-    curl -L https://github.com/rancher/strongswan-package/releases/download/${VERSION}/strongswan-${VERSION}.tar.gz > strongswan/strongswan-${VERSION}.tar.gz
+    echo Downloading strongswan-${VERSION}.tar.gz
+    curl -sLf https://github.com/rancher/strongswan-package/releases/download/${VERSION}/strongswan-${VERSION}.tar.gz > strongswan/strongswan-${VERSION}.tar.gz
     [ "$(sha1sum -b strongswan/strongswan-${VERSION}.tar.gz | awk '{print $1}')" == "$HASH" ]
 fi
