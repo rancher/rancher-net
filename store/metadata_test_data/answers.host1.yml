@@ -1,0 +1,1077 @@
+'2015-07-25':
+  default:
+    containers:
+    - &id014
+      create_index: 1
+      external_id: 779f71ede6f82f3adce7efa0b3ba6c6dc44c103e14e3065425b67cc8bbe96432
+      health_state: null
+      host_uuid: ce5d0147-8f2d-4e87-86ea-977dd61f83df
+      hostname: null
+      ips:
+      - 10.42.128.187
+      labels:
+        io.rancher.project.name: rocket-chat
+        io.rancher.service.deployment.unit: 20e2f2b1-f6fd-4d06-b387-3c1e3a702d5a
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: rocket-chat/mongo
+        io.rancher.stack.name: rocket-chat
+        io.rancher.stack_service.name: rocket-chat/mongo
+        io.rancher.service.hash: e793dc53c75b19b1d39a4249679518e5bb056b4f
+        io.rancher.container.uuid: 7113cb84-d968-4ad4-8648-8441095106a6
+        io.rancher.container.name: rocket-chat_mongo_1
+        io.rancher.container.ip: 10.42.128.187/16
+      name: rocket-chat_mongo_1
+      ports: []
+      primary_ip: 10.42.128.187
+      service_index: '1'
+      service_name: mongo
+      stack_name: rocket-chat
+      start_count: 1
+      state: running
+      uuid: 7113cb84-d968-4ad4-8648-8441095106a6
+    - &id015
+      create_index: null
+      external_id: f5ad0d2bb345471c5ae6dd14995d791b82246889e63b516fa0b5e0084353f331
+      health_state: null
+      host_uuid: ce5d0147-8f2d-4e87-86ea-977dd61f83df
+      hostname: null
+      ips:
+      - 10.42.221.125
+      labels:
+        io.rancher.container.system: NetworkAgent
+        io.rancher.container.uuid: e70da6ca-e6ee-4dd1-a837-89e96fa42938
+        io.rancher.container.name: Network Agent
+        io.rancher.container.agent_id: '4'
+        io.rancher.container.ip: 10.42.221.125/16
+      name: Network Agent
+      ports: []
+      primary_ip: 10.42.221.125
+      service_index: null
+      service_name: null
+      stack_name: null
+      start_count: 1
+      state: running
+      uuid: e70da6ca-e6ee-4dd1-a837-89e96fa42938
+    - &id016
+      create_index: 1
+      external_id: d75ca8b68526de0bab930bf50e1ec1366b91a8805cb11f3bd33760f90f23a361
+      health_state: null
+      host_uuid: ce5d0147-8f2d-4e87-86ea-977dd61f83df
+      hostname: null
+      ips:
+      - 10.42.207.141
+      labels:
+        io.rancher.project.name: ghost
+        io.rancher.service.deployment.unit: 734ab88d-a730-444a-8e84-be3fd5dfd123
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: ghost/ghost
+        io.rancher.stack.name: ghost
+        io.rancher.stack_service.name: ghost/ghost
+        io.rancher.service.hash: 61b2a20ec578100a2d3c75875f0870096338ece5
+        io.rancher.container.uuid: c736b294-d9b9-47fe-9faa-c2d9a7efc4cc
+        io.rancher.container.name: ghost_ghost_1
+        io.rancher.container.ip: 10.42.207.141/16
+      name: ghost_ghost_1
+      ports:
+      - 130.211.160.79:8987:2368/tcp
+      primary_ip: 10.42.207.141
+      service_index: '1'
+      service_name: ghost
+      stack_name: ghost
+      start_count: 1
+      state: running
+      uuid: c736b294-d9b9-47fe-9faa-c2d9a7efc4cc
+    - &id017
+      create_index: 1
+      external_id: 648aa7d8a6c4eb32c9617186a37c7278b71c5e4c4af9523eb7fd38387608fb6c
+      health_state: null
+      host_uuid: ce5d0147-8f2d-4e87-86ea-977dd61f83df
+      hostname: null
+      ips:
+      - 10.42.228.29
+      labels:
+        io.rancher.project.name: triple
+        io.rancher.service.deployment.unit: 31f6b033-f70f-4b05-9023-48c455b21443
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: triple/alpha
+        io.rancher.stack.name: triple
+        io.rancher.stack_service.name: triple/alpha
+        io.rancher.service.hash: 9ae263a03d69737acd36a49d07f9288050cc1141
+        io.rancher.container.uuid: ae60eae3-1f4d-491e-aafb-0ff1969438d9
+        io.rancher.container.name: triple_alpha_1
+        io.rancher.container.ip: 10.42.228.29/16
+      name: triple_alpha_1
+      ports:
+      - 130.211.160.79:40001:80/tcp
+      primary_ip: 10.42.228.29
+      service_index: '1'
+      service_name: alpha
+      stack_name: triple
+      start_count: 1
+      state: running
+      uuid: ae60eae3-1f4d-491e-aafb-0ff1969438d9
+    - &id018
+      create_index: 1
+      external_id: 9cdde5751c9e166a0a51dea67ca86e5a2257961140464e3a6360be7c5b1a9546
+      health_state: null
+      host_uuid: ce5d0147-8f2d-4e87-86ea-977dd61f83df
+      hostname: null
+      ips:
+      - 10.42.151.49
+      labels:
+        io.rancher.scheduler.global: 'true'
+        io.rancher.project.name: globalexample
+        io.rancher.service.deployment.unit: f153b14f-6e2b-48e4-9bea-2d7f130db24a
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: globalexample/nato
+        io.rancher.service.requested.host.id: '1'
+        io.rancher.stack.name: globalexample
+        io.rancher.stack_service.name: globalexample/nato
+        io.rancher.service.hash: bfacf9bf9755effe8ca062c6c2c1443340f3203a
+        io.rancher.container.uuid: 03f5a9c2-183b-4e21-b71e-927af93c66cc
+        io.rancher.container.name: globalexample_nato_1
+        io.rancher.container.ip: 10.42.151.49/16
+      name: globalexample_nato_1
+      ports:
+      - 130.211.160.79:41011:80/tcp
+      primary_ip: 10.42.151.49
+      service_index: '1'
+      service_name: nato
+      stack_name: globalexample
+      start_count: 1
+      state: running
+      uuid: 03f5a9c2-183b-4e21-b71e-927af93c66cc
+    - &id008
+      create_index: 1
+      external_id: 5573e7627fe7c85defc6a20d07d3da2c9da65f3b29611e0d1cf3d9ceb57d6747
+      health_state: null
+      host_uuid: 5d67de07-c644-4001-a219-11d2c7662c82
+      hostname: null
+      ips:
+      - 10.42.73.81
+      labels:
+        io.rancher.project.name: rocket-chat
+        io.rancher.service.deployment.unit: 62c74524-7e7f-4509-8c23-922fbedc8d59
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: rocket-chat/rocketchat
+        io.rancher.stack.name: rocket-chat
+        io.rancher.stack_service.name: rocket-chat/rocketchat
+        io.rancher.service.hash: 8977397abec00b351475ed4482806bcd88169263
+        io.rancher.container.uuid: 0b1f0629-862e-468a-a97c-4e6dfff37daf
+        io.rancher.container.name: rocket-chat_rocketchat_1
+        io.rancher.container.ip: 10.42.73.81/16
+      name: rocket-chat_rocketchat_1
+      ports:
+      - 104.155.135.97:3000:3000/tcp
+      primary_ip: 10.42.73.81
+      service_index: '1'
+      service_name: rocketchat
+      stack_name: rocket-chat
+      start_count: 1
+      state: running
+      uuid: 0b1f0629-862e-468a-a97c-4e6dfff37daf
+    - &id019
+      create_index: null
+      external_id: 46ba9baec31c016ffaaff659da8f296bcf3854fa580da87f6d564c4994dffa1c
+      health_state: null
+      host_uuid: 5d67de07-c644-4001-a219-11d2c7662c82
+      hostname: null
+      ips:
+      - 10.42.53.162
+      labels:
+        io.rancher.container.system: NetworkAgent
+        io.rancher.container.uuid: 7807e9b3-b25e-4569-8b15-69bd3c339573
+        io.rancher.container.name: Network Agent
+        io.rancher.container.agent_id: '5'
+        io.rancher.container.ip: 10.42.53.162/16
+      name: Network Agent
+      ports: []
+      primary_ip: 10.42.53.162
+      service_index: null
+      service_name: null
+      stack_name: null
+      start_count: 1
+      state: running
+      uuid: 7807e9b3-b25e-4569-8b15-69bd3c339573
+    - &id001
+      create_index: 1
+      external_id: 1e7de486fd7a1213edd377218de6fc62010e4f733356d879521983ce90a6f127
+      health_state: null
+      host_uuid: 5d67de07-c644-4001-a219-11d2c7662c82
+      hostname: null
+      ips:
+      - 10.42.114.70
+      labels:
+        io.rancher.project.name: wordpress
+        io.rancher.service.deployment.unit: 39dc601a-1a03-46bb-b925-643ffcc2dc71
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: wordpress/db
+        io.rancher.stack.name: wordpress
+        io.rancher.stack_service.name: wordpress/db
+        io.rancher.service.hash: 9eb241eb1f5b721fa11358879eb20c00c66aae11
+        io.rancher.container.uuid: 71fdf56e-574e-4b10-b142-995ac5783f59
+        io.rancher.container.name: wordpress_db_1
+        io.rancher.container.ip: 10.42.114.70/16
+      name: wordpress_db_1
+      ports: []
+      primary_ip: 10.42.114.70
+      service_index: '1'
+      service_name: db
+      stack_name: wordpress
+      start_count: 1
+      state: running
+      uuid: 71fdf56e-574e-4b10-b142-995ac5783f59
+    - &id011
+      create_index: 1
+      external_id: f987f4dd7004d95e4647f9f2f4c65732cfd817b9179b3b74676e6a4f0a55d060
+      health_state: null
+      host_uuid: 5d67de07-c644-4001-a219-11d2c7662c82
+      hostname: null
+      ips:
+      - 10.42.248.225
+      labels:
+        io.rancher.project.name: triple
+        io.rancher.service.deployment.unit: b5192eb8-4345-466f-b486-60154aef9115
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: triple/charlie
+        io.rancher.stack.name: triple
+        io.rancher.stack_service.name: triple/charlie
+        io.rancher.service.hash: f36ff6db027f9c86f7360df47a4fbe5b50220062
+        io.rancher.container.uuid: 90c62a80-208c-4b06-9662-b1b0f10ec6d7
+        io.rancher.container.name: triple_charlie_1
+        io.rancher.container.ip: 10.42.248.225/16
+      name: triple_charlie_1
+      ports:
+      - 104.155.135.97:40003:80/tcp
+      primary_ip: 10.42.248.225
+      service_index: '1'
+      service_name: charlie
+      stack_name: triple
+      start_count: 1
+      state: running
+      uuid: 90c62a80-208c-4b06-9662-b1b0f10ec6d7
+    - &id004
+      create_index: 2
+      external_id: 3015de2ef6fb8d069c0308ae4713164906ae1a625572aa7e8df801517dfb6033
+      health_state: null
+      host_uuid: 5d67de07-c644-4001-a219-11d2c7662c82
+      hostname: null
+      ips:
+      - 10.42.231.44
+      labels:
+        io.rancher.scheduler.global: 'true'
+        io.rancher.project.name: globalexample
+        io.rancher.service.deployment.unit: b8e4ec48-7071-4192-8bd4-24e53963db95
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: globalexample/nato
+        io.rancher.service.requested.host.id: '2'
+        io.rancher.stack.name: globalexample
+        io.rancher.stack_service.name: globalexample/nato
+        io.rancher.service.hash: bfacf9bf9755effe8ca062c6c2c1443340f3203a
+        io.rancher.container.uuid: 93e87dae-2129-4658-9323-18b19b9bb924
+        io.rancher.container.name: globalexample_nato_2
+        io.rancher.container.ip: 10.42.231.44/16
+      name: globalexample_nato_2
+      ports:
+      - 104.155.135.97:41011:80/tcp
+      primary_ip: 10.42.231.44
+      service_index: '2'
+      service_name: nato
+      stack_name: globalexample
+      start_count: 1
+      state: running
+      uuid: 93e87dae-2129-4658-9323-18b19b9bb924
+    - &id020
+      create_index: 1
+      external_id: 172e18f098643c47de02f8b050790f797bac66413184d4359cb2b02618f0530e
+      health_state: null
+      host_uuid: a8567665-9735-4111-9b42-20c8836564d6
+      hostname: null
+      ips:
+      - 10.42.223.250
+      labels:
+        io.rancher.project.name: rocket-chat
+        io.rancher.service.deployment.unit: 319aaf3d-33b7-4cd6-b177-4169e8f3a5fb
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: rocket-chat/hubot
+        io.rancher.stack.name: rocket-chat
+        io.rancher.stack_service.name: rocket-chat/hubot
+        io.rancher.service.hash: fe5ef314de2393325e1a124feac9bfd443c64f97
+        io.rancher.container.uuid: 8f9029f2-a53d-4649-93a9-5451694101e9
+        io.rancher.container.name: rocket-chat_hubot_1
+        io.rancher.container.ip: 10.42.223.250/16
+      name: rocket-chat_hubot_1
+      ports:
+      - 104.155.146.133:3001:8080/tcp
+      primary_ip: 10.42.223.250
+      service_index: '1'
+      service_name: hubot
+      stack_name: rocket-chat
+      start_count: 1
+      state: running
+      uuid: 8f9029f2-a53d-4649-93a9-5451694101e9
+    - &id021
+      create_index: null
+      external_id: 1664a225ff2f47294234285f13786a359c2379698f586f67f4554ff79e2b6c24
+      health_state: null
+      host_uuid: a8567665-9735-4111-9b42-20c8836564d6
+      hostname: null
+      ips:
+      - 10.42.105.87
+      labels:
+        io.rancher.container.system: NetworkAgent
+        io.rancher.container.uuid: ef76c4ca-beb8-4940-9913-daf40e290f0e
+        io.rancher.container.name: Network Agent
+        io.rancher.container.agent_id: '6'
+        io.rancher.container.ip: 10.42.105.87/16
+      name: Network Agent
+      ports: []
+      primary_ip: 10.42.105.87
+      service_index: null
+      service_name: null
+      stack_name: null
+      start_count: 1
+      state: running
+      uuid: ef76c4ca-beb8-4940-9913-daf40e290f0e
+    - &id022
+      create_index: 1
+      external_id: 9a28718f55a59e398a95935ec1ec567b86ddeef207835a682662583b0c4c3b36
+      health_state: null
+      host_uuid: a8567665-9735-4111-9b42-20c8836564d6
+      hostname: null
+      ips:
+      - 10.42.187.22
+      labels:
+        io.rancher.project.name: wordpress
+        io.rancher.service.deployment.unit: 8e6c4f99-77a1-410d-aa48-cd9c14f0474e
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: wordpress/wordpress
+        io.rancher.stack.name: wordpress
+        io.rancher.stack_service.name: wordpress/wordpress
+        io.rancher.service.hash: 92589bfe33e5e4168725c67628b58e5e72d011fa
+        io.rancher.container.uuid: 9bca3f2b-c22a-462c-a9b6-eaa47b4aad79
+        io.rancher.container.name: wordpress_wordpress_1
+        io.rancher.container.ip: 10.42.187.22/16
+      name: wordpress_wordpress_1
+      ports:
+      - 104.155.146.133:8484:80/tcp
+      primary_ip: 10.42.187.22
+      service_index: '1'
+      service_name: wordpress
+      stack_name: wordpress
+      start_count: 1
+      state: running
+      uuid: 9bca3f2b-c22a-462c-a9b6-eaa47b4aad79
+    - &id023
+      create_index: 1
+      external_id: 2c50f56e006ea76c8c8966b270ae417c29c67532ea82b07ee0fd966cb52f1f4f
+      health_state: null
+      host_uuid: a8567665-9735-4111-9b42-20c8836564d6
+      hostname: null
+      ips:
+      - 10.42.68.158
+      labels:
+        io.rancher.project.name: triple
+        io.rancher.service.deployment.unit: 6e902556-c228-4ec7-8724-99ecfe7c6bbb
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: triple/bravo
+        io.rancher.stack.name: triple
+        io.rancher.stack_service.name: triple/bravo
+        io.rancher.service.hash: 89ab683562baa6b5fe369aff692afffad9c9a327
+        io.rancher.container.uuid: ed795a0b-9cf0-4691-91f5-126c540aa661
+        io.rancher.container.name: triple_bravo_1
+        io.rancher.container.ip: 10.42.68.158/16
+      name: triple_bravo_1
+      ports:
+      - 104.155.146.133:40002:80/tcp
+      primary_ip: 10.42.68.158
+      service_index: '1'
+      service_name: bravo
+      stack_name: triple
+      start_count: 1
+      state: running
+      uuid: ed795a0b-9cf0-4691-91f5-126c540aa661
+    - &id024
+      create_index: 3
+      external_id: 154c8f22e8e48d7fd650751c747793099da30e097c262357e51fa613fa3f4614
+      health_state: null
+      host_uuid: a8567665-9735-4111-9b42-20c8836564d6
+      hostname: null
+      ips:
+      - 10.42.119.156
+      labels:
+        io.rancher.scheduler.global: 'true'
+        io.rancher.project.name: globalexample
+        io.rancher.service.deployment.unit: c1cbf33d-5c23-4e3e-9064-5b1fdc9a532e
+        io.rancher.service.launch.config: io.rancher.service.primary.launch.config
+        io.rancher.project_service.name: globalexample/nato
+        io.rancher.service.requested.host.id: '3'
+        io.rancher.stack.name: globalexample
+        io.rancher.stack_service.name: globalexample/nato
+        io.rancher.service.hash: bfacf9bf9755effe8ca062c6c2c1443340f3203a
+        io.rancher.container.uuid: 076c90b0-5895-4304-9c91-86ed715f630a
+        io.rancher.container.name: globalexample_nato_3
+        io.rancher.container.ip: 10.42.119.156/16
+      name: globalexample_nato_3
+      ports:
+      - 104.155.146.133:41011:80/tcp
+      primary_ip: 10.42.119.156
+      service_index: '3'
+      service_name: nato
+      stack_name: globalexample
+      start_count: 1
+      state: running
+      uuid: 076c90b0-5895-4304-9c91-86ed715f630a
+    hosts:
+    - agent_ip: 130.211.160.79
+      hostId: 1
+      hostname: aa-leo-tmp-10acre-2
+      labels:
+        io.rancher.host.linux_kernel_version: '3.19'
+        io.rancher.host.docker_version: '1.10'
+      name: aa-leo-tmp-10acre-2
+      uuid: ce5d0147-8f2d-4e87-86ea-977dd61f83df
+    - agent_ip: 104.155.135.97
+      hostId: 2
+      hostname: aa-leo-tmp-10acre-1
+      labels:
+        io.rancher.host.linux_kernel_version: '3.19'
+        io.rancher.host.docker_version: '1.10'
+      name: aa-leo-tmp-10acre-1
+      uuid: 5d67de07-c644-4001-a219-11d2c7662c82
+    - agent_ip: 104.155.146.133
+      hostId: 3
+      hostname: aa-leo-tmp-10acre-3
+      labels:
+        io.rancher.host.linux_kernel_version: '3.19'
+        io.rancher.host.docker_version: '1.10'
+      name: aa-leo-tmp-10acre-3
+      uuid: a8567665-9735-4111-9b42-20c8836564d6
+    self:
+      host:
+        agent_ip: 104.155.135.97
+        hostId: 2
+        hostname: aa-leo-tmp-10acre-1
+        labels:
+          io.rancher.host.linux_kernel_version: '3.19'
+          io.rancher.host.docker_version: '1.10'
+        name: aa-leo-tmp-10acre-1
+        uuid: 5d67de07-c644-4001-a219-11d2c7662c82
+    services:
+    - containers:
+      - rocket-chat_mongo_1
+      expose: &id025 []
+      external_ips: &id026 []
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: &id027
+        io.rancher.service.hash: e793dc53c75b19b1d39a4249679518e5bb056b4f
+      links: {}
+      metadata: &id028
+        io.rancher.service.hash: 16294d680b8d3cbf5967a29a833bdec0730e25d5
+      name: mongo
+      ports: &id029 []
+      scale: 1
+      sidekicks: &id030 []
+      stack_name: rocket-chat
+      token: null
+      uuid: ed007641-3a25-4a32-bca9-fdcea240cdec
+      vip: null
+    - &id009
+      containers:
+      - rocket-chat_rocketchat_1
+      expose: &id031 []
+      external_ips: &id032 []
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: &id033
+        io.rancher.service.hash: 8977397abec00b351475ed4482806bcd88169263
+      links:
+        rocket-chat/mongo: mongo
+      metadata: &id034
+        io.rancher.service.hash: e7379577e1059c3c7ef84ae610d5ad26da9fe25b
+      name: rocketchat
+      ports: &id035
+      - 3000:3000/tcp
+      scale: 1
+      sidekicks: &id036 []
+      stack_name: rocket-chat
+      token: null
+      uuid: 1bf95584-b081-4ee7-8aa8-bb42c2f4c4e7
+      vip: null
+    - containers:
+      - rocket-chat_hubot_1
+      expose: &id037 []
+      external_ips: &id038 []
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: &id039
+        io.rancher.service.hash: fe5ef314de2393325e1a124feac9bfd443c64f97
+      links:
+        rocket-chat/rocketchat: rocketchat
+      metadata: &id040
+        io.rancher.service.hash: b1ef36ea20e8dbdefb29b5f0a5a27cc1628fb433
+      name: hubot
+      ports: &id041
+      - 3001:8080/tcp
+      scale: 1
+      sidekicks: &id042 []
+      stack_name: rocket-chat
+      token: null
+      uuid: 483e97df-5429-4979-bbb7-e5741b43dfa0
+      vip: null
+    - containers:
+      - ghost_ghost_1
+      expose: &id043 []
+      external_ips: &id044 []
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: &id045
+        io.rancher.service.hash: 61b2a20ec578100a2d3c75875f0870096338ece5
+      links: {}
+      metadata: &id046
+        io.rancher.service.hash: f49280e1f709117b76693b638834791e4f4ef0fd
+      name: ghost
+      ports: &id047
+      - 8987:2368/tcp
+      scale: 1
+      sidekicks: &id048 []
+      stack_name: ghost
+      token: null
+      uuid: c2916a99-1f55-45d9-a8f8-8c025a6b332d
+      vip: null
+    - &id002
+      containers:
+      - wordpress_db_1
+      expose: &id049 []
+      external_ips: &id050 []
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: &id051
+        io.rancher.service.hash: 9eb241eb1f5b721fa11358879eb20c00c66aae11
+      links: {}
+      metadata: &id052
+        io.rancher.service.hash: 98d0039e2af5f4d47e0c2eef103b27e8f2717cd3
+      name: db
+      ports: &id053 []
+      scale: 1
+      sidekicks: &id054 []
+      stack_name: wordpress
+      token: null
+      uuid: de3afe4b-85d9-49f6-8e56-e83bd9bd4519
+      vip: null
+    - containers:
+      - wordpress_wordpress_1
+      expose: &id055 []
+      external_ips: &id056 []
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: &id057
+        io.rancher.service.hash: 92589bfe33e5e4168725c67628b58e5e72d011fa
+      links:
+        wordpress/db: mysql
+      metadata: &id058
+        io.rancher.service.hash: ed9d26dd9fce0e66bedfe5bc5e1dd0b92a856bf3
+      name: wordpress
+      ports: &id059
+      - 8484:80/tcp
+      scale: 1
+      sidekicks: &id060 []
+      stack_name: wordpress
+      token: null
+      uuid: 2ec5913d-b1e6-4efd-bfd7-b74fa18ac315
+      vip: null
+    - containers:
+      - triple_alpha_1
+      expose: &id061 []
+      external_ips: &id062 []
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: &id063
+        io.rancher.service.hash: 9ae263a03d69737acd36a49d07f9288050cc1141
+      links: {}
+      metadata: &id064
+        io.rancher.service.hash: 8a10554df3bc6a092dd0099d9780457380526030
+      name: alpha
+      ports: &id065
+      - 40001:80/tcp
+      scale: 1
+      sidekicks: &id066 []
+      stack_name: triple
+      token: null
+      uuid: abb9dd2d-78f2-4544-99e3-6a61c2a52f6d
+      vip: null
+    - &id012
+      containers:
+      - triple_charlie_1
+      expose: &id067 []
+      external_ips: &id068 []
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: &id069
+        io.rancher.service.hash: f36ff6db027f9c86f7360df47a4fbe5b50220062
+      links: {}
+      metadata: &id070
+        io.rancher.service.hash: b062d386eafe5066caa89eae642a7ed77f09bdde
+      name: charlie
+      ports: &id071
+      - 40003:80/tcp
+      scale: 1
+      sidekicks: &id072 []
+      stack_name: triple
+      token: null
+      uuid: 9e8a5e40-2d54-4c2d-a65e-7b1da85cdcc9
+      vip: null
+    - containers:
+      - triple_bravo_1
+      expose: &id073 []
+      external_ips: &id074 []
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: &id075
+        io.rancher.service.hash: 89ab683562baa6b5fe369aff692afffad9c9a327
+      links: {}
+      metadata: &id076
+        io.rancher.service.hash: 614c40a8effc3bd450e5ebe2345e4611acf9665c
+      name: bravo
+      ports: &id077
+      - 40002:80/tcp
+      scale: 1
+      sidekicks: &id078 []
+      stack_name: triple
+      token: null
+      uuid: efbfd8e3-58cf-45d9-b802-5c38cf900273
+      vip: null
+    - &id006
+      containers:
+      - globalexample_nato_1
+      - globalexample_nato_2
+      - globalexample_nato_3
+      expose: &id079 []
+      external_ips: &id080 []
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: &id081
+        io.rancher.scheduler.global: 'true'
+        io.rancher.service.hash: bfacf9bf9755effe8ca062c6c2c1443340f3203a
+      links: {}
+      metadata: &id082
+        io.rancher.service.hash: 72cc05b03e80c0939ab067c8041b07f28b18f198
+      name: nato
+      ports: &id083
+      - 41011:80/tcp
+      scale: 1
+      sidekicks: &id084 []
+      stack_name: globalexample
+      token: null
+      uuid: d3ab747f-d029-4300-b801-418cda620d7b
+      vip: null
+    stacks:
+    - &id007
+      environment_name: Default
+      environment_uuid: adminProject
+      name: globalexample
+      services:
+      - nato
+      uuid: bcd0a481-3996-4b94-bdb4-983fd9c48d08
+    - &id013
+      environment_name: Default
+      environment_uuid: adminProject
+      name: triple
+      services:
+      - alpha
+      - charlie
+      - bravo
+      uuid: 32c79860-15c7-4ebb-8692-2b5ab1dbbc58
+    - &id010
+      environment_name: Default
+      environment_uuid: adminProject
+      name: rocket-chat
+      services:
+      - mongo
+      - rocketchat
+      - hubot
+      uuid: 78d48e0c-0b36-44a8-9faf-f985903862f3
+    - environment_name: Default
+      environment_uuid: adminProject
+      name: ghost
+      services:
+      - ghost
+      uuid: 7f1754d6-836d-4b54-80d2-6ffe748321cd
+    - &id003
+      environment_name: Default
+      environment_uuid: adminProject
+      name: wordpress
+      services:
+      - db
+      - wordpress
+      uuid: 55e44a6c-730e-425f-a98c-2447429e193e
+    version: 23-257aff5cc23042701e4b6e49146ac4f33de95ee93d14f3484f87f4e23b378943
+  10.42.114.70:
+    self:
+      container: *id001
+      host: &id005
+        agent_ip: 104.155.135.97
+        hostId: 2
+        hostname: aa-leo-tmp-10acre-1
+        labels:
+          io.rancher.host.linux_kernel_version: '3.19'
+          io.rancher.host.docker_version: '1.10'
+        name: aa-leo-tmp-10acre-1
+        uuid: 5d67de07-c644-4001-a219-11d2c7662c82
+      service: *id002
+      stack: *id003
+  10.42.231.44:
+    self:
+      container: *id004
+      host: *id005
+      service: *id006
+      stack: *id007
+  10.42.73.81:
+    self:
+      container: *id008
+      host: *id005
+      service: *id009
+      stack: *id010
+  10.42.248.225:
+    self:
+      container: *id011
+      host: *id005
+      service: *id012
+      stack: *id013
+latest: &id099
+  default:
+    containers:
+    - *id014
+    - *id015
+    - *id016
+    - *id017
+    - *id018
+    - *id008
+    - *id019
+    - *id001
+    - *id011
+    - *id004
+    - *id020
+    - *id021
+    - *id022
+    - *id023
+    - *id024
+    hosts:
+    - agent_ip: 130.211.160.79
+      hostId: 1
+      hostname: aa-leo-tmp-10acre-2
+      labels:
+        io.rancher.host.linux_kernel_version: '3.19'
+        io.rancher.host.docker_version: '1.10'
+      name: aa-leo-tmp-10acre-2
+      uuid: ce5d0147-8f2d-4e87-86ea-977dd61f83df
+    - agent_ip: 104.155.135.97
+      hostId: 2
+      hostname: aa-leo-tmp-10acre-1
+      labels:
+        io.rancher.host.linux_kernel_version: '3.19'
+        io.rancher.host.docker_version: '1.10'
+      name: aa-leo-tmp-10acre-1
+      uuid: 5d67de07-c644-4001-a219-11d2c7662c82
+    - agent_ip: 104.155.146.133
+      hostId: 3
+      hostname: aa-leo-tmp-10acre-3
+      labels:
+        io.rancher.host.linux_kernel_version: '3.19'
+        io.rancher.host.docker_version: '1.10'
+      name: aa-leo-tmp-10acre-3
+      uuid: a8567665-9735-4111-9b42-20c8836564d6
+    self:
+      host:
+        agent_ip: 104.155.135.97
+        hostId: 2
+        hostname: aa-leo-tmp-10acre-1
+        labels:
+          io.rancher.host.linux_kernel_version: '3.19'
+          io.rancher.host.docker_version: '1.10'
+        name: aa-leo-tmp-10acre-1
+        uuid: 5d67de07-c644-4001-a219-11d2c7662c82
+    services:
+    - &id089
+      containers:
+      - *id014
+      create_index: 1
+      expose: *id025
+      external_ips: *id026
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: *id027
+      links: {}
+      metadata: *id028
+      name: mongo
+      ports: *id029
+      scale: 1
+      sidekicks: *id030
+      stack_name: rocket-chat
+      token: null
+      uuid: ed007641-3a25-4a32-bca9-fdcea240cdec
+      vip: null
+    - &id090
+      containers:
+      - *id008
+      create_index: 1
+      expose: *id031
+      external_ips: *id032
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: *id033
+      links:
+        rocket-chat/mongo: mongo
+      metadata: *id034
+      name: rocketchat
+      ports: *id035
+      scale: 1
+      sidekicks: *id036
+      stack_name: rocket-chat
+      token: null
+      uuid: 1bf95584-b081-4ee7-8aa8-bb42c2f4c4e7
+      vip: null
+    - &id091
+      containers:
+      - *id020
+      create_index: 1
+      expose: *id037
+      external_ips: *id038
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: *id039
+      links:
+        rocket-chat/rocketchat: rocketchat
+      metadata: *id040
+      name: hubot
+      ports: *id041
+      scale: 1
+      sidekicks: *id042
+      stack_name: rocket-chat
+      token: null
+      uuid: 483e97df-5429-4979-bbb7-e5741b43dfa0
+      vip: null
+    - &id092
+      containers:
+      - *id016
+      create_index: 1
+      expose: *id043
+      external_ips: *id044
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: *id045
+      links: {}
+      metadata: *id046
+      name: ghost
+      ports: *id047
+      scale: 1
+      sidekicks: *id048
+      stack_name: ghost
+      token: null
+      uuid: c2916a99-1f55-45d9-a8f8-8c025a6b332d
+      vip: null
+    - &id093
+      containers:
+      - *id001
+      create_index: 1
+      expose: *id049
+      external_ips: *id050
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: *id051
+      links: {}
+      metadata: *id052
+      name: db
+      ports: *id053
+      scale: 1
+      sidekicks: *id054
+      stack_name: wordpress
+      token: null
+      uuid: de3afe4b-85d9-49f6-8e56-e83bd9bd4519
+      vip: null
+    - &id094
+      containers:
+      - *id022
+      create_index: 1
+      expose: *id055
+      external_ips: *id056
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: *id057
+      links:
+        wordpress/db: mysql
+      metadata: *id058
+      name: wordpress
+      ports: *id059
+      scale: 1
+      sidekicks: *id060
+      stack_name: wordpress
+      token: null
+      uuid: 2ec5913d-b1e6-4efd-bfd7-b74fa18ac315
+      vip: null
+    - &id086
+      containers:
+      - *id017
+      create_index: 1
+      expose: *id061
+      external_ips: *id062
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: *id063
+      links: {}
+      metadata: *id064
+      name: alpha
+      ports: *id065
+      scale: 1
+      sidekicks: *id066
+      stack_name: triple
+      token: null
+      uuid: abb9dd2d-78f2-4544-99e3-6a61c2a52f6d
+      vip: null
+    - &id087
+      containers:
+      - *id011
+      create_index: 1
+      expose: *id067
+      external_ips: *id068
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: *id069
+      links: {}
+      metadata: *id070
+      name: charlie
+      ports: *id071
+      scale: 1
+      sidekicks: *id072
+      stack_name: triple
+      token: null
+      uuid: 9e8a5e40-2d54-4c2d-a65e-7b1da85cdcc9
+      vip: null
+    - &id088
+      containers:
+      - *id023
+      create_index: 1
+      expose: *id073
+      external_ips: *id074
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: *id075
+      links: {}
+      metadata: *id076
+      name: bravo
+      ports: *id077
+      scale: 1
+      sidekicks: *id078
+      stack_name: triple
+      token: null
+      uuid: efbfd8e3-58cf-45d9-b802-5c38cf900273
+      vip: null
+    - &id085
+      containers:
+      - *id018
+      - *id004
+      - *id024
+      create_index: 3
+      expose: *id079
+      external_ips: *id080
+      fqdn: null
+      hostname: null
+      kind: service
+      labels: *id081
+      links: {}
+      metadata: *id082
+      name: nato
+      ports: *id083
+      scale: 1
+      sidekicks: *id084
+      stack_name: globalexample
+      token: null
+      uuid: d3ab747f-d029-4300-b801-418cda620d7b
+      vip: null
+    stacks:
+    - &id096
+      environment_name: Default
+      environment_uuid: adminProject
+      name: globalexample
+      services:
+      - *id085
+      uuid: bcd0a481-3996-4b94-bdb4-983fd9c48d08
+    - &id098
+      environment_name: Default
+      environment_uuid: adminProject
+      name: triple
+      services:
+      - *id086
+      - *id087
+      - *id088
+      uuid: 32c79860-15c7-4ebb-8692-2b5ab1dbbc58
+    - &id097
+      environment_name: Default
+      environment_uuid: adminProject
+      name: rocket-chat
+      services:
+      - *id089
+      - *id090
+      - *id091
+      uuid: 78d48e0c-0b36-44a8-9faf-f985903862f3
+    - environment_name: Default
+      environment_uuid: adminProject
+      name: ghost
+      services:
+      - *id092
+      uuid: 7f1754d6-836d-4b54-80d2-6ffe748321cd
+    - &id095
+      environment_name: Default
+      environment_uuid: adminProject
+      name: wordpress
+      services:
+      - *id093
+      - *id094
+      uuid: 55e44a6c-730e-425f-a98c-2447429e193e
+    version: 23-257aff5cc23042701e4b6e49146ac4f33de95ee93d14f3484f87f4e23b378943
+  10.42.114.70:
+    self:
+      container: *id001
+      host: *id005
+      service: *id093
+      stack: *id095
+  10.42.231.44:
+    self:
+      container: *id004
+      host: *id005
+      service: *id085
+      stack: *id096
+  10.42.73.81:
+    self:
+      container: *id008
+      host: *id005
+      service: *id090
+      stack: *id097
+  10.42.248.225:
+    self:
+      container: *id011
+      host: *id005
+      service: *id087
+      stack: *id098
+'2015-12-19': *id099
+

@@ -12,5 +12,7 @@ type Store interface {
 	LocalIpAddress() string
 	IsRemote(ipAddress string) bool
 	Entries() []Entry
+	RemoteEntriesMap() map[string]Entry
+	PeerEntriesMap() map[string]Entry
 	Reload() error
 }

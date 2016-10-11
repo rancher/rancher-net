@@ -27,6 +27,7 @@ type Config struct {
 	local       map[string]Entry
 	remote      map[string]Entry
 	entries     []Entry
+	peers       map[string]Entry
 }
 
 type Records struct {
@@ -61,12 +62,17 @@ func (s *Simple) Reload() error {
 		return err
 	}
 
+	logrus.Debugf("entries: %v", entries)
+
 	var filteredEntries []Entry
 	var self *Entry
+	peers := make(map[string]Entry)
 
 	for i, entry := range entries {
 		if entry.Self {
-			entries[i].IpAddress = s.ipOverride
+			if s.ipOverride != "" {
+				entries[i].IpAddress = s.ipOverride
+			}
 			self = &entry
 			break
 		}
@@ -75,6 +81,8 @@ func (s *Simple) Reload() error {
 	if self == nil {
 		return fmt.Errorf("Failed to find self entry")
 	}
+
+	logrus.Debugf("self: %v", self)
 
 	ip, ipNet, err := net.ParseCIDR(self.IpAddress)
 	if err != nil {
@@ -98,6 +106,11 @@ func (s *Simple) Reload() error {
 		}
 
 		filteredEntries = append(filteredEntries, entry)
+
+		if entry.Peer {
+			peers[ipNoCidr] = entry
+		}
+
 	}
 
 	if s.ipOverride != "" {
@@ -116,7 +129,11 @@ func (s *Simple) Reload() error {
 		local:       local,
 		remote:      remote,
 		entries:     filteredEntries,
+		peers:       peers,
 	}
+
+	logrus.Debugf("config: %+v", s.config)
+
 	return nil
 }
 
@@ -124,6 +141,12 @@ func (s *Simple) getConfig() Config {
 	s.Lock()
 	defer s.Unlock()
 	return s.config
+}
+
+func (s *Simple) PeerEntriesMap() map[string]Entry {
+	s.Lock()
+	defer s.Unlock()
+	return s.config.peers
 }
 
 func (s *Simple) LocalHostIpAddress() string {
@@ -136,6 +159,10 @@ func (s *Simple) LocalIpAddress() string {
 
 func (s *Simple) Entries() []Entry {
 	return s.getConfig().entries
+}
+
+func (s *Simple) RemoteEntriesMap() map[string]Entry {
+	return s.getConfig().remote
 }
 
 func (s *Simple) IsRemote(ipAddress string) bool {
