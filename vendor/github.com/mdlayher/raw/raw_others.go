@@ -1,21 +1,12 @@
-// +build !linux
+// +build !darwin,!dragonfly,!freebsd,!linux,!netbsd,!openbsd
 
 package raw
 
 import (
 	"net"
 	"time"
-)
 
-const (
-	// ProtocolAoE specifies the ATA over Ethernet protocol (AoEr11).
-	ProtocolAoE Protocol = 0
-
-	// ProtocolARP specifies the Address Resolution Protocol (RFC 826).
-	ProtocolARP Protocol = 0
-
-	// ProtocolWoL specifies the Wake-on-LAN protocol.
-	ProtocolWoL Protocol = 0
+	"golang.org/x/net/bpf"
 )
 
 var (
@@ -63,5 +54,10 @@ func (p *packetConn) SetReadDeadline(t time.Time) error {
 
 // SetWriteDeadline is not currently implemented on this platform.
 func (p *packetConn) SetWriteDeadline(t time.Time) error {
+	return ErrNotImplemented
+}
+
+// SetBPF is not currently implemented on this platform.
+func (p *packetConn) SetBPF(filter []bpf.RawInstruction) error {
 	return ErrNotImplemented
 }
