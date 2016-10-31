@@ -1,22 +1,22 @@
 #!/bin/bash
-set -e
 
-cd $(dirname $0)/..
+ARCH=${ARCH:-"amd64"}
+SUFFIX=""
+[ "${ARCH}" != "amd64" ] && SUFFIX="_${ARCH}"
 
-CONTENT=$(</proc/sys/kernel/random/uuid)
+source $(dirname $0)/version
 
-rm -rf dist/artifacts
+cd $(dirname $0)/../package
 
-mkdir -p build/${CONTENT}
-mkdir -p dist/artifacts
+TAG=${TAG:-${VERSION}${SUFFIX}}
+REPO=${REPO:-rancher}
 
-strip --strip-debug bin/*
-cp -rf apply.sh bin strongswan content build/${CONTENT}
+if $(echo ${TAG} | grep -q dirty); then
+    TAG=dev
+fi
 
-cd build
+cp ../bin/rancher-net .
+cp ../strongswan/* strongswan.tar.gz
+docker build -t ${REPO}/net:${TAG} .
 
-sha1sum -b $(find ${CONTENT} -type f) > ${CONTENT}/SHA1SUMS
-sha1sum ${CONTENT}/SHA1SUMS > ${CONTENT}/SHA1SUMSSUM
-
-tar czf ../dist/artifacts/rancher-net.tar.gz ${CONTENT}
-echo Created dist/artifacts/rancher-net.tar.gz
+echo Built ${REPO}/net:${TAG}
