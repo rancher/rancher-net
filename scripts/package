@@ -8,15 +8,15 @@ source $(dirname $0)/version
 
 cd $(dirname $0)/../package
 
-TAG=${TAG:-${VERSION}${SUFFIX}}
+IMAGE_TAG=${IMAGE_TAG:-${VERSION}${SUFFIX}}
 REPO=${REPO:-rancher}
 
-if $(echo ${TAG} | grep -q dirty); then
-    TAG=dev
+if $(echo ${IMAGE_TAG} | grep -q dirty); then
+    IMAGE_TAG=dev
 fi
 
 cp ../bin/rancher-net .
 cp ../strongswan/* strongswan.tar.gz
-docker build -t ${REPO}/net:${TAG} .
+docker build -t ${REPO}/net:${IMAGE_TAG} .
 
-echo Built ${REPO}/net:${TAG}
+echo Built ${REPO}/net:${IMAGE_TAG}
