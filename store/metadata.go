@@ -170,10 +170,12 @@ func (ms *MetadataStore) doInternalRefresh() {
 	}
 
 	for _, c := range ms.info.containers {
-		e, _ := ms.getEntryFromContainer(c)
-		if e.IpAddress == "" {
+		if c.NetworkUUID != ms.info.selfContainer.NetworkUUID || c.PrimaryIp == "" ||
+			c.NetworkFromContainerUUID != "" {
 			continue
 		}
+
+		e, _ := ms.getEntryFromContainer(c)
 
 		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
 		if _, ok := peersMap[ipNoCidr]; ok {
