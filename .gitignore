@@ -3,3 +3,8 @@
 /strongswan
 /.trash-cache
 /.dapper
+*strongswan.tar.gz
+/rancher-net
+/package/rancher-net
+/trash
+/build
