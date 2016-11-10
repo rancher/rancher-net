@@ -12,12 +12,13 @@ ADD strongswan.tar.gz /
 RUN mkdir -p /opt/cni/bin /etc/cni/net.d
 ENV CNI v0.3.0-rancher3
 RUN curl -sfSL https://github.com/rancher/cni/releases/download/${CNI}/cni-${CNI}.tar.gz | \
-    tar xvzf - -C /tmp ./bridge ./loopback && \
-    mv /tmp/bridge /usr/bin/rancher-bridge && \
-    mv /tmp/loopback /usr/bin/loopback
+       tar xvzf - -C /tmp ./bridge ./loopback \
+    && mkdir -p /opt/cni/bin \
+    && mv /tmp/bridge /opt/cni/bin/rancher-bridge \
+    && mv /tmp/loopback /opt/cni/bin/loopback
 
-RUN curl -sfSL https://github.com/rancher/rancher-cni-ipam/releases/download/v0.0.1/rancher-cni-ipam.tar.gz | \
-    tar xvzf - -C /usr/bin
+RUN curl -sfSL https://github.com/rancher/rancher-cni-ipam/releases/download/v0.1.0/rancher-cni-ipam.tar.gz | \
+    tar xvzf - -C /opt/cni/bin
 
 COPY start.sh start-vxlan.sh rancher-net /usr/bin/
 CMD ["start.sh"]
