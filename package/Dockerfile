@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     openssl
 ADD strongswan.tar.gz /
 RUN mkdir -p /opt/cni/bin /etc/cni/net.d
-ENV CNI v0.3.0-rancher3
+ENV CNI v0.3.0-rancher4
 RUN curl -sfSL https://github.com/rancher/cni/releases/download/${CNI}/cni-${CNI}.tar.gz | \
        tar xvzf - -C /tmp ./bridge ./loopback \
     && mkdir -p /opt/cni/bin \
