@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     iputils-ping \
     psmisc \
     tcpdump \
+    ethtool \
     vim-tiny \
     curl \
     openssl
