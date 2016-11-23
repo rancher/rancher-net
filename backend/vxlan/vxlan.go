@@ -4,6 +4,7 @@ package vxlan
 import (
 	"errors"
 	"net"
+	"os/exec"
 	"reflect"
 	"strings"
 	"sync"
@@ -124,12 +125,30 @@ func NewOverlay(configDir string, db store.Store) (*Overlay, error) {
 	return o, nil
 }
 
+func disableChecksumOffload() error {
+	logrus.Infof("vxlan: disabling tx checksum offload")
+
+	cmdOutput, err := exec.Command("ethtool", "-K", "eth0", "tx", "off").CombinedOutput()
+	if err != nil {
+		logrus.Errorf("err: %v, cmdOut=%v", err, string(cmdOutput))
+		return err
+	}
+
+	return nil
+}
+
 // Start is used to start the vxlan overlay
 func (o *Overlay) Start(launch bool, logFile string) {
 	logrus.Infof("vxlan: Start")
 	logrus.Debugf("launch: %v", launch)
 
-	err := o.configure()
+	err := disableChecksumOffload()
+	if err != nil {
+		logrus.Errorf("vxlan: Start: error disabling tx checksum offload")
+		return
+	}
+
+	err = o.configure()
 	if err != nil {
 		logrus.Errorf("couldn't configure: %v", err)
 		logrus.Errorf("vxlan: Start: failed")
