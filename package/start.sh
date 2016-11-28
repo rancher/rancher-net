@@ -3,6 +3,9 @@ set -e -x
 
 trap "exit 1" SIGTERM SIGINT
 
+export CHARON_PID_FILE=/var/run/charon.pid
+rm -f ${CHARON_PID_FILE}
+
 export PIDFILE=/var/run/rancher-net.pid
 GCM=false
 
