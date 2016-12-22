@@ -1,4 +1,4 @@
-FROM rancher/agent-base:v0.2.0
+FROM rancher/agent-base:v0.3.0
 ENV CNI v0.3.0-rancher4
 
 ADD strongswan.tar.gz /
