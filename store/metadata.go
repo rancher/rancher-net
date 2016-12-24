@@ -166,17 +166,44 @@ func (ms *MetadataStore) doInternalRefresh() {
 	remote := map[string]Entry{}
 	peersMap := map[string]Entry{}
 	remoteNonPeersMap := map[string]Entry{}
+	peersNetworks := map[string]bool{}
 
-	for _, sc := range ms.info.selfService.Containers {
-		e, _ := ms.getEntryFromContainer(sc)
-		e.Peer = true
-		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
-		peersMap[ipNoCidr] = e
+	// GET /self/service/containers is not sufficient to get the peers
+
+	networkLabel := "io.rancher.container.agent_service.networking"
+	//for _, sc := range ms.info.selfService.Containers {
+	//	e, _ := ms.getEntryFromContainer(sc)
+	//	e.Peer = true
+	//	ipNoCidr := strings.Split(e.IpAddress, "/")[0]
+	//	peersMap[ipNoCidr] = e
+	//}
+
+	// Figure out the peer containers and networks
+	for _, c := range ms.info.containers {
+		logrus.Debugf("labels: %+v", c.Labels)
+		// TODO: For now match the peer service name
+		if _, ok := c.Labels[networkLabel]; ok {
+			logrus.Infof("Found networkLabel for c: %+v", c)
+			e, _ := ms.getEntryFromContainer(c)
+			e.Peer = true
+			ipNoCidr := strings.Split(e.IpAddress, "/")[0]
+			peersMap[ipNoCidr] = e
+			peersNetworks[c.NetworkUUID] = true
+		}
 	}
 
+	logrus.Infof("peersMap: %+v", peersMap)
+	logrus.Infof("peersNetworks: %+v", peersNetworks)
+
 	for _, c := range ms.info.containers {
-		if c.NetworkUUID != ms.info.selfContainer.NetworkUUID || c.PrimaryIp == "" ||
+		// check if the container networkUUID is a hit
+		// in the peersNetworks
+
+		_, isPresentInPeersNetworks := peersNetworks[c.NetworkUUID]
+
+		if !isPresentInPeersNetworks || c.PrimaryIp == "" ||
 			c.NetworkFromContainerUUID != "" {
+			logrus.Infof("continuing for c: %+v", c)
 			continue
 		}
 
@@ -201,8 +228,10 @@ func (ms *MetadataStore) doInternalRefresh() {
 		entries = append(entries, e)
 	}
 
-	logrus.Debugf("entries: %v", entries)
-	logrus.Debugf("peersMap: %v", peersMap)
+	logrus.Infof("entries: %+v", entries)
+	logrus.Infof("peersMap: %+v", peersMap)
+	logrus.Infof("local: %+v", local)
+	logrus.Infof("remote: %+v", remote)
 
 	ms.entries = entries
 	ms.peersMap = peersMap
