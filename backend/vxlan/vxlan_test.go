@@ -2,7 +2,8 @@ package vxlan
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
+	"github.com/rancher/go-rancher-metadata/metadata"
+	logrus "github.com/rancher/rancher-net/log"
 	"github.com/rancher/rancher-net/store"
 	"github.com/vishvananda/netlink"
 	"math/rand"
@@ -22,19 +23,32 @@ func randSeq(n int) string {
 	return string(b)
 }
 
+// NewTestOverlay is used to create a new VXLAN Overlay network
+// for testing purposes
+func NewTestOverlay(v *vxlanIntfInfo, db store.Store) (*Overlay, error) {
+	logrus.Debugf("vxlan: creating new overlay: %+v", v)
+	mc, err := metadata.NewClientAndWait(metadataURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Overlay{
+		m:  mc,
+		db: db,
+		v:  v,
+	}, nil
+}
+
 func getRandomVxlanInterface() *vxlanIntfInfo {
 	vni := 10000 + rand.Intn(50000)
 	name := fmt.Sprintf("vtep%v", vni)
 
-	vtepIPStr1 := "169.254.1.1"
-	vtepIP1 := net.ParseIP(vtepIPStr1)
 	vtepMAC1, _ := net.ParseMAC("00:00:00:00:01:01")
 
 	vx := &vxlanIntfInfo{
 		name: name,
 		vni:  vni,
 		port: vni,
-		ip:   vtepIP1,
 		mac:  vtepMAC1,
 		mtu:  vxlanMTU,
 	}
@@ -54,52 +68,6 @@ func init() {
 // run either in a privileged container or using sudo.
 // Easy way would be to mount the source code inside a go container
 // and build/run/test.
-
-func TestGetIPAddressInVxlanSubnetRange(t *testing.T) {
-	_, err := getIPAddressInVxlanSubnet(allowedStartIndex - 1)
-	if err == nil {
-		t.Error("expected an error, got nil")
-	}
-
-	_, err = getIPAddressInVxlanSubnet(allowedEndIndex + 1)
-	if err == nil {
-		t.Error("expected an error, got nil")
-	}
-}
-
-func TestGetIPAddressInVxlanSubnet(t *testing.T) {
-	ip, err := getIPAddressInVxlanSubnet(2)
-	if err != nil {
-		t.Error("Not expecting an error")
-	} else {
-		expected := "169.254.0.2"
-		if ip.String() != expected {
-			t.Error("Invalid IP address returned, expected: %v, got: %v", expected, ip)
-		}
-	}
-
-	ip, err = getIPAddressInVxlanSubnet(256)
-	if err != nil {
-		t.Error("Not expecting an error")
-	} else {
-		expected := "169.254.1.0"
-		if ip.String() != expected {
-			t.Error("Invalid IP address returned, expected: %v, got: %v", expected, ip)
-		}
-	}
-}
-
-func TestGetIPAddressInVxlanSubnetForMetadataIndex(t *testing.T) {
-	ip, err := getIPAddressInVxlanSubnet(blackListIndex)
-	if err != nil {
-		t.Error("Not expecting an error")
-	} else {
-		expected := "169.254.255.254"
-		if ip.String() != expected {
-			t.Error("Invalid IP address returned, expected: %v, got: %v", expected, ip)
-		}
-	}
-}
 
 func TestCreateDeleteVTEP(t *testing.T) {
 	vx := getRandomVxlanInterface()
@@ -146,30 +114,18 @@ func TestAddDeleteVxlanStaticRoute(t *testing.T) {
 }
 
 func TestGetMACAddressForVxlanIP(t *testing.T) {
-	inputVxlanIP := "169.254.29.78"
-	expected := "00:ab:a9:fe:1d:4e"
+	inputVxlanIP := "10.42.29.78"
+	macprefix := "00:ab:00:00:00:00"
+	expected := "00:ab:0a:2a:1d:4e"
 
-	actual, _ := getMACAddressForVxlanIP(net.ParseIP(inputVxlanIP))
+	actual, _ := getMACAddressForVxlanIP(macprefix, net.ParseIP(inputVxlanIP))
 	if actual.String() != expected {
 		t.Error("expected: %v, actual: %v", expected, actual)
 	}
 }
 
-func TestMapRancherIPToVxlanIP(t *testing.T) {
-	rancherIPStr := "10.42.29.78"
-	expectedVxlanIPStr := "169.254.29.78"
-
-	actualIP, _ := mapRancherIPToVxlanIP(net.ParseIP(rancherIPStr))
-	if actualIP.String() != expectedVxlanIPStr {
-		t.Error("Expected: %v actual: %v", expectedVxlanIPStr, actualIP)
-	}
-}
-
 func TestAddDelRoute(t *testing.T) {
-	vtepIPStr1 := "169.254.1.1"
-	vtepIPStr2 := "169.254.2.2"
-	//vtepIPStr3 := "169.254.3.3"
-	vtepIP1 := net.ParseIP(vtepIPStr1)
+	vxlanContainerIP := "10.42.2.2"
 	vtepMAC1, _ := net.ParseMAC("00:00:00:00:01:01")
 	intfName := randSeq(8)
 
@@ -177,7 +133,6 @@ func TestAddDelRoute(t *testing.T) {
 		name: intfName,
 		vni:  vxlanVni,
 		port: vxlanPort,
-		ip:   vtepIP1,
 		mac:  vtepMAC1,
 		mtu:  vxlanMTU,
 	}
@@ -189,15 +144,25 @@ func TestAddDelRoute(t *testing.T) {
 
 	ip, _ := netlink.ParseIPNet("10.1.1.1/32")
 
-	via1 := net.ParseIP(vtepIPStr2)
+	via1 := net.ParseIP(vxlanContainerIP)
 	//via2 := net.ParseIP(vtepIPStr3)
 
-	err = addRoute(ip, via1)
+	err = addRoute(ip, via1, "")
 	if err != nil {
 		t.Error("No error expected, got: %v", err)
 	}
 
-	err = delRoute(ip, via1)
+	err = delRoute(ip, via1, "")
+	if err != nil {
+		t.Error("No error expected, got: %v", err)
+	}
+
+	err = addRoute(ip, nil, v.name)
+	if err != nil {
+		t.Error("No error expected, got: %v", err)
+	}
+
+	err = delRoute(ip, nil, v.name)
 	if err != nil {
 		t.Error("No error expected, got: %v", err)
 	}
@@ -251,10 +216,15 @@ func TestDiffEntries(t *testing.T) {
 	newDB := store.NewSimpleStore(waitForFile("newEntries.json"), "")
 	newDB.Reload()
 
-	diff := calculateDiffOfEntries(oldDB.RemoteEntriesMap(), newDB.RemoteEntriesMap())
+	oldMap := oldDB.RemoteEntriesMap()
+	newMap := newDB.RemoteEntriesMap()
+	diff := calculateDiffOfEntries(oldMap, newMap)
 
+	logrus.Debugf("After oldMap: %+v", oldMap)
+
+	logrus.Debugf("diff: %+v", diff)
 	if len(diff.toAdd) != 1 || len(diff.toDel) != 1 || len(diff.toUpd) != 1 {
-		t.Errorf("not execpected lengths")
+		t.Errorf("not expected lengths")
 	}
 }
 
@@ -270,7 +240,7 @@ func TestDBEntries(t *testing.T) {
 		t.Errorf("expected length: %v got: %v", expectedLength, actualLength)
 	}
 
-	expectedIP := "169.254.100.17"
+	expectedIP := "10.42.100.17"
 	actualIP := m["172.22.101.101"].String()
 	if actualIP != expectedIP {
 		t.Errorf("expected: %v got: %v", expectedIP, actualIP)
@@ -292,8 +262,6 @@ func TestFindVxlanInterace(t *testing.T) {
 func TestPeerVxlanEntryOperations(t *testing.T) {
 	var err error
 
-	vtepIPStr1 := "169.254.1.1"
-	vtepIP1 := net.ParseIP(vtepIPStr1)
 	vtepMAC1, _ := net.ParseMAC("00:00:00:00:01:01")
 	intfName := randSeq(8)
 
@@ -301,7 +269,6 @@ func TestPeerVxlanEntryOperations(t *testing.T) {
 		name: intfName,
 		vni:  vxlanVni,
 		port: vxlanPort,
-		ip:   vtepIP1,
 		mac:  vtepMAC1,
 		mtu:  vxlanMTU,
 	}
@@ -315,7 +282,10 @@ func TestPeerVxlanEntryOperations(t *testing.T) {
 		HostIpAddress: "52.1.1.1",
 	}
 
-	v := newPeerVxlanEntry(intfName, e)
+	v, err := newPeerVxlanEntry(intfName, e)
+	if err != nil {
+		t.Errorf("Error creating new peer entry: %v", err)
+	}
 	if v == nil {
 		t.Errorf("Not expecting nil")
 	}
@@ -355,12 +325,15 @@ func TestRemoteVxlanEntryOperations(t *testing.T) {
 		HostIpAddress: "172.22.101.101",
 	}
 
-	v := newRemoteVxlanEntry(e, m)
+	v, err := newRemoteVxlanEntry(vx.name, e, m)
+	if err != nil {
+		t.Errorf("Error creating new remote entry: %v", err)
+	}
 	if v == nil {
 		t.Errorf("Not expecting nil")
 	}
 
-	expectedVia := "169.254.100.17"
+	expectedVia := "10.42.100.17"
 	actualVia := v.via.String()
 	if actualVia != expectedVia {
 		t.Errorf("expected: %v actual: %v", expectedVia, actualVia)
@@ -371,6 +344,7 @@ func TestRemoteVxlanEntryOperations(t *testing.T) {
 		t.Error("No error expected, got: %v", err)
 	}
 
+	v.via = nil
 	err = v.del()
 	if err != nil {
 		t.Error("No error expected, got: %v", err)
@@ -394,37 +368,15 @@ func TestVxlanFunctionality(t *testing.T) {
 	o.cleanup()
 }
 
-func TestGetMyRancherIPFromInterface(t *testing.T) {
-	ip, err := getMyRancherIPFromInterface()
-	if err != nil {
-		t.Error("not expecting error, got: %v", err)
-	}
-
-	logrus.Debugf("ip: %v", ip)
-}
-
 func TestGetMyVtepInfo(t *testing.T) {
 	vx := getRandomVxlanInterface()
 	db, _ := store.NewMetadataStore("")
 	db.Reload()
 	o, _ := NewTestOverlay(vx, db)
 
-	ip, mac, _ := o.GetMyVTEPInfo()
+	mac, _ := o.GetMyVTEPInfo()
 
-	if ip.String() == "" || mac.String() == "" {
-		t.Error("Expecting an ip address")
+	if mac.String() == "" {
+		t.Error("Expecting a MAC address")
 	}
 }
-
-/*
-func TestPrintRange(t *testing.T) {
-	for i := allowedStartIndex; i <= allowedEndIndex; i++ {
-		ip, err := getIPAddressInVxlanSubnet(i)
-		if err != nil {
-			t.Error("Not expecting an error")
-		} else {
-			logrus.Debugf("%v : %v", ip, i)
-		}
-	}
-}
-*/
