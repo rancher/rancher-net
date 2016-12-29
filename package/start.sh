@@ -3,6 +3,12 @@ set -e -x
 
 trap "exit 1" SIGTERM SIGINT
 
+while curl http://localhost:8111 >/dev/null 2>&1; do
+    # This is an upgrade hack from going from v0.7.5 to something newer
+    echo Waiting for old ipsec container to stop
+    sleep 2
+done
+
 export CHARON_PID_FILE=/var/run/charon.pid
 rm -f ${CHARON_PID_FILE}
 
