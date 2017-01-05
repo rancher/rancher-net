@@ -27,7 +27,7 @@ done
 
 mkdir -p /etc/ipsec
 curl -f -u ${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY} ${CATTLE_URL}/configcontent/psk > /etc/ipsec/psk.txt
-curl -f -X PUT -u ${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY} ${CATTLE_URL}/configcontent/psk?version=latest
+curl -f -X PUT -d "" -u ${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY} ${CATTLE_URL}/configcontent/psk?version=latest
 GATEWAY=$(ip route get 8.8.8.8 | awk '{print $3}')
 iptables -t nat -I POSTROUTING -o eth0 -s $GATEWAY -j MASQUERADE
 exec rancher-net -i $(ip route get 8.8.8.8 | grep via | awk '{print $7}')/16 --pid-file ${PIDFILE} --gcm=$GCM --use-metadata --charon-launch --ipsec-config /etc/ipsec
