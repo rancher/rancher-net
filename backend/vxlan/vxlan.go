@@ -87,11 +87,6 @@ type entriesDiff struct {
 	toUpd map[string]store.Entry
 }
 
-func init() {
-	logrus.SetLevel(logrus.DebugLevel)
-	//logrus.SetLevel(logrus.InfoLevel)
-}
-
 // NewTestOverlay is used to create a new VXLAN Overlay network
 // for testing purposes
 func NewTestOverlay(v *vxlanIntfInfo, db store.Store) (*Overlay, error) {
