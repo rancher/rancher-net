@@ -5,7 +5,7 @@ ADD strongswan.tar.gz /
 RUN mkdir -p /opt/cni/bin /etc/cni/net.d && \
     curl -sfSL https://github.com/containernetworking/cni/releases/download/${CNI}/cni-${CNI}.tgz | \
        tar xvzf - -C /tmp ./loopback && \
-    curl -sfSL https://github.com/rancher/rancher-cni-bridge/releases/download/v0.1.1/rancher-cni-bridge-v0.1.1.tar.gz | \
+    curl -sfSL https://github.com/rancher/rancher-cni-bridge/releases/download/v0.1.2/rancher-cni-bridge-v0.1.2.tar.gz | \
     tar xvzf - -C /tmp \
     && mkdir -p /opt/cni/bin \
     && mv /tmp/rancher-cni-bridge /opt/cni/bin/rancher-bridge \
