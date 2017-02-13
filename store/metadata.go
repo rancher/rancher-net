@@ -13,13 +13,14 @@ const (
 
 // MetadataStore contains information related to metadata client, etc
 type MetadataStore struct {
-	mc       metadata.Client
-	self     Entry
-	entries  []Entry
-	local    map[string]Entry
-	remote   map[string]Entry
-	peersMap map[string]Entry
-	info     *InfoFromMetadata
+	mc                metadata.Client
+	self              Entry
+	entries           []Entry
+	local             map[string]Entry
+	remote            map[string]Entry
+	peersMap          map[string]Entry
+	remoteNonPeersMap map[string]Entry
+	info              *InfoFromMetadata
 }
 
 // InfoFromMetadata stores the information that has been fetched from
@@ -113,7 +114,6 @@ func (ms *MetadataStore) Entries() []Entry {
 }
 
 func (ms *MetadataStore) getEntryFromContainer(c metadata.Container) (Entry, error) {
-	logrus.Debugf("Getting Entry from Container: %+v", c)
 
 	isSelf := (c.PrimaryIp == ms.info.selfContainer.PrimaryIp)
 	isPeer := false
@@ -125,7 +125,6 @@ func (ms *MetadataStore) getEntryFromContainer(c metadata.Container) (Entry, err
 		isPeer,
 	}
 
-	logrus.Debugf("entry: %+v", entry)
 	return entry, nil
 }
 
@@ -137,6 +136,11 @@ func (ms *MetadataStore) RemoteEntriesMap() map[string]Entry {
 // PeerEntriesMap is used to get a map of entries with only the peers
 func (ms *MetadataStore) PeerEntriesMap() map[string]Entry {
 	return ms.peersMap
+}
+
+// RemoteNonPeerEntriesMap is used to get a map of all entries which are remote
+func (ms *MetadataStore) RemoteNonPeerEntriesMap() map[string]Entry {
+	return ms.remoteNonPeersMap
 }
 
 // getHostsMapFromHostsArray returns a map of hosts which can be looked up by UUID of the host
@@ -161,6 +165,7 @@ func (ms *MetadataStore) doInternalRefresh() {
 	local := map[string]Entry{}
 	remote := map[string]Entry{}
 	peersMap := map[string]Entry{}
+	remoteNonPeersMap := map[string]Entry{}
 
 	for _, sc := range ms.info.selfService.Containers {
 		e, _ := ms.getEntryFromContainer(sc)
@@ -175,6 +180,7 @@ func (ms *MetadataStore) doInternalRefresh() {
 			continue
 		}
 
+		logrus.Debugf("Getting Entry from Container: %+v", c)
 		e, _ := ms.getEntryFromContainer(c)
 
 		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
@@ -186,8 +192,12 @@ func (ms *MetadataStore) doInternalRefresh() {
 			local[ipNoCidr] = e
 		} else {
 			remote[ipNoCidr] = e
+			if !e.Peer {
+				remoteNonPeersMap[ipNoCidr] = e
+			}
 		}
 
+		logrus.Debugf("entry: %+v", e)
 		entries = append(entries, e)
 	}
 
@@ -198,6 +208,7 @@ func (ms *MetadataStore) doInternalRefresh() {
 	ms.peersMap = peersMap
 	ms.local = local
 	ms.remote = remote
+	ms.remoteNonPeersMap = remoteNonPeersMap
 }
 
 // Reload is used to refresh/reload the data from metadata
