@@ -21,13 +21,14 @@ type Simple struct {
 }
 
 type Config struct {
-	hostIp      string
-	cidrIp      net.IP
-	cidrNetwork *net.IPNet
-	local       map[string]Entry
-	remote      map[string]Entry
-	entries     []Entry
-	peers       map[string]Entry
+	hostIp            string
+	cidrIp            net.IP
+	cidrNetwork       *net.IPNet
+	local             map[string]Entry
+	remote            map[string]Entry
+	entries           []Entry
+	peers             map[string]Entry
+	remoteNonPeersMap map[string]Entry
 }
 
 type Records struct {
@@ -91,6 +92,7 @@ func (s *Simple) Reload() error {
 
 	local := map[string]Entry{}
 	remote := map[string]Entry{}
+	remoteNonPeersMap := map[string]Entry{}
 
 	for _, entry := range entries {
 		if entry.IpAddress == "" {
@@ -103,6 +105,9 @@ func (s *Simple) Reload() error {
 			local[ipNoCidr] = entry
 		} else {
 			remote[ipNoCidr] = entry
+			if !entry.Peer {
+				remoteNonPeersMap[ipNoCidr] = entry
+			}
 		}
 
 		filteredEntries = append(filteredEntries, entry)
@@ -123,13 +128,14 @@ func (s *Simple) Reload() error {
 	s.Lock()
 	defer s.Unlock()
 	s.config = Config{
-		hostIp:      self.HostIpAddress,
-		cidrIp:      ip,
-		cidrNetwork: ipNet,
-		local:       local,
-		remote:      remote,
-		entries:     filteredEntries,
-		peers:       peers,
+		hostIp:            self.HostIpAddress,
+		cidrIp:            ip,
+		cidrNetwork:       ipNet,
+		local:             local,
+		remote:            remote,
+		remoteNonPeersMap: remoteNonPeersMap,
+		entries:           filteredEntries,
+		peers:             peers,
 	}
 
 	logrus.Debugf("config: %+v", s.config)
@@ -147,6 +153,12 @@ func (s *Simple) PeerEntriesMap() map[string]Entry {
 	s.Lock()
 	defer s.Unlock()
 	return s.config.peers
+}
+
+func (s *Simple) RemoteNonPeerEntriesMap() map[string]Entry {
+	s.Lock()
+	defer s.Unlock()
+	return s.config.remoteNonPeersMap
 }
 
 func (s *Simple) LocalHostIpAddress() string {
