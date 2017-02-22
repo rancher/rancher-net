@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	defaultMetadataURL = "http://rancher-metadata/2015-12-19"
+	defaultMetadataURL = "http://rancher-metadata.rancher.internal/2015-12-19"
 )
 
 // MetadataStore contains information related to metadata client, etc
