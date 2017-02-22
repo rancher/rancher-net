@@ -42,6 +42,7 @@ type Service struct {
 	LBConfig           LBConfig               `json:"lb_config"`
 	EnvironmentUUID    string                 `json:"environment_uuid"`
 	State              string                 `json:"state"`
+	System             bool                   `json:"system"`
 }
 
 type Container struct {

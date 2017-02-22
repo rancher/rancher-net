@@ -26,12 +26,14 @@ type MetadataStore struct {
 // InfoFromMetadata stores the information that has been fetched from
 // metadata server
 type InfoFromMetadata struct {
-	selfContainer metadata.Container
-	selfHost      metadata.Host
-	selfService   metadata.Service
-	hosts         []metadata.Host
-	containers    []metadata.Container
-	hostsMap      map[string]metadata.Host
+	selfContainer     metadata.Container
+	selfHost          metadata.Host
+	selfService       metadata.Service
+	services          []metadata.Service
+	servicesMapByName map[string][]*metadata.Service
+	hosts             []metadata.Host
+	containers        []metadata.Container
+	hostsMap          map[string]metadata.Host
 }
 
 // NewMetadataStoreWithClientIP creates, intializes and returns a store for use with a specific Client IP to contact the metadata
@@ -156,6 +158,74 @@ func getHostsMapFromHostsArray(hosts []metadata.Host) map[string]metadata.Host {
 	return hostsMap
 }
 
+func (ms *MetadataStore) getLinkedFromServicesToSelf() []*metadata.Service {
+	linkedTo := ms.info.selfService.StackName + "/" + ms.info.selfService.Name
+	logrus.Debugf("getLinkedFromServicesToSelf linkedTo: %v", linkedTo)
+
+	var linkedFromServices []*metadata.Service
+
+	for _, service := range ms.info.services {
+		if !service.System {
+			continue
+		}
+		linkedFromServiceName := service.StackName + "/" + service.Name
+		if len(service.Links) > 0 {
+			for linkedService := range service.Links {
+				if linkedService != linkedTo {
+					continue
+				}
+				linkedFromServices = append(linkedFromServices, ms.info.servicesMapByName[linkedFromServiceName]...)
+			}
+		}
+	}
+
+	logrus.Debugf("linkedFromServices: %v", linkedFromServices)
+	return linkedFromServices
+}
+
+// When environments are linked, the network services across the
+// environments are linked. This function goes through the links
+// either to/from and figures out the networks of those peers.
+func (ms *MetadataStore) getLinkedPeersInfo() (map[string]bool, []metadata.Container) {
+	linkedPeersNetworks := map[string]bool{}
+	var linkedPeersContainers []metadata.Container
+
+	// Find out if the current service has links else if other services link to current service
+	if len(ms.info.selfService.Links) > 0 {
+		for linkedServiceName := range ms.info.selfService.Links {
+			linkedServices, ok := ms.info.servicesMapByName[linkedServiceName]
+			logrus.Debugf("linkedServices: %+v", linkedServices)
+			if !ok {
+				logrus.Errorf("Current service is linked to service: %v, but cannot find in servicesMapByName")
+				continue
+			} else {
+				for _, aService := range linkedServices {
+					for _, aContainer := range aService.Containers {
+						linkedPeersContainers = append(linkedPeersContainers, aContainer)
+						if _, ok := linkedPeersNetworks[aContainer.NetworkUUID]; !ok {
+							linkedPeersNetworks[aContainer.NetworkUUID] = true
+						}
+					}
+				}
+			}
+		}
+	} else {
+		linkedFromServices := ms.getLinkedFromServicesToSelf()
+		for _, aService := range linkedFromServices {
+			for _, aContainer := range aService.Containers {
+				linkedPeersContainers = append(linkedPeersContainers, aContainer)
+				if _, ok := linkedPeersNetworks[aContainer.NetworkUUID]; !ok {
+					linkedPeersNetworks[aContainer.NetworkUUID] = true
+				}
+			}
+		}
+	}
+
+	logrus.Debugf("getLinkedPeersInfo linkedPeersNetworks: %+v", linkedPeersNetworks)
+	logrus.Debugf("getLinkedPeersInfo linkedPeersContainers: %v", linkedPeersContainers)
+	return linkedPeersNetworks, linkedPeersContainers
+}
+
 func (ms *MetadataStore) doInternalRefresh() {
 	logrus.Debugf("Doing internal refresh")
 
@@ -166,8 +236,13 @@ func (ms *MetadataStore) doInternalRefresh() {
 	remote := map[string]Entry{}
 	peersMap := map[string]Entry{}
 	remoteNonPeersMap := map[string]Entry{}
+	peersNetworks, linkedPeersContainers := ms.getLinkedPeersInfo()
 
-	for _, sc := range ms.info.selfService.Containers {
+	// Add self network to peersNetworks
+	peersNetworks[ms.info.selfContainer.NetworkUUID] = true
+
+	allPeersContainers := append(ms.info.selfService.Containers, linkedPeersContainers...)
+	for _, sc := range allPeersContainers {
 		e, _ := ms.getEntryFromContainer(sc)
 		e.Peer = true
 		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
@@ -175,7 +250,11 @@ func (ms *MetadataStore) doInternalRefresh() {
 	}
 
 	for _, c := range ms.info.containers {
-		if c.NetworkUUID != ms.info.selfContainer.NetworkUUID || c.PrimaryIp == "" ||
+		// check if the container networkUUID is part of peersNetworks
+		_, isPresentInPeersNetworks := peersNetworks[c.NetworkUUID]
+
+		if !isPresentInPeersNetworks ||
+			c.PrimaryIp == "" ||
 			c.NetworkFromContainerUUID != "" {
 			continue
 		}
@@ -201,14 +280,41 @@ func (ms *MetadataStore) doInternalRefresh() {
 		entries = append(entries, e)
 	}
 
-	logrus.Debugf("entries: %v", entries)
-	logrus.Debugf("peersMap: %v", peersMap)
+	logrus.Debugf("entries: %+v", entries)
+	logrus.Debugf("peersMap: %+v", peersMap)
+	logrus.Debugf("local: %+v", local)
+	logrus.Debugf("remote: %+v", remote)
 
 	ms.entries = entries
 	ms.peersMap = peersMap
 	ms.local = local
 	ms.remote = remote
 	ms.remoteNonPeersMap = remoteNonPeersMap
+}
+
+// getServicesMapByName builds a map indexed by `stack_name/service_name`
+// It excludes the current service in the map
+func getServicesMapByName(services []metadata.Service, selfService metadata.Service) map[string][]*metadata.Service {
+	// Build serviceMap by "stack_name/service_name"
+	// The reason for an array in map value is because of not
+	// using UUID but names which can result in duplicates.
+	// TODO: Once LinksByUUID is available, use that instead
+	servicesMapByName := make(map[string][]*metadata.Service)
+	for index, aService := range services {
+		if !aService.System || aService.UUID == selfService.UUID {
+			continue
+		}
+		key := aService.StackName + "/" + aService.Name
+		if value, ok := servicesMapByName[key]; ok {
+			servicesMapByName[key] = append(value, &services[index])
+
+		} else {
+			servicesMapByName[key] = []*metadata.Service{&services[index]}
+		}
+	}
+	logrus.Debugf("servicesMapByName: %+v", servicesMapByName)
+
+	return servicesMapByName
 }
 
 // Reload is used to refresh/reload the data from metadata
@@ -245,12 +351,22 @@ func (ms *MetadataStore) Reload() error {
 		return err
 	}
 
+	services, err := ms.mc.GetServices()
+	if err != nil {
+		logrus.Errorf("couldn't get services from metadata: %v", err)
+		return err
+	}
+
+	servicesMapByName := getServicesMapByName(services, selfService)
+
 	hostsMap := getHostsMapFromHostsArray(hosts)
 
 	info := &InfoFromMetadata{
 		selfContainer,
 		selfHost,
 		selfService,
+		services,
+		servicesMapByName,
 		hosts,
 		containers,
 		hostsMap,
