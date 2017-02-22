@@ -8,7 +8,7 @@ import (
 
 var (
 	changeCheckInterval = 2
-	metadataURL         = "http://rancher-metadata/2015-12-19"
+	metadataURL         = "http://rancher-metadata.rancher.internal/2015-12-19"
 )
 
 // MetadataChangeHandler listens for version changes of metadata
