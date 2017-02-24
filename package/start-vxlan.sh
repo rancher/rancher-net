@@ -13,7 +13,7 @@ else
 fi
 
 GATEWAY=$(ip route get 8.8.8.8 | awk '{print $3}')
-iptables -t nat -I POSTROUTING -o eth0 -s $GATEWAY -j MASQUERADE
+iptables -t nat -I POSTROUTING -o vtep1042 -s $GATEWAY -j MASQUERADE
 exec rancher-net \
 -i ${LOCAL_IP}/16 \
 --pid-file ${PIDFILE} \
