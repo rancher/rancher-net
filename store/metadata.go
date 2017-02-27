@@ -201,6 +201,10 @@ func (ms *MetadataStore) getLinkedPeersInfo() (map[string]bool, []metadata.Conta
 			} else {
 				for _, aService := range linkedServices {
 					for _, aContainer := range aService.Containers {
+						// Skip containers with --net=host
+						if aContainer.PrimaryIp == ms.info.hostsMap[aContainer.HostUUID].AgentIP {
+							continue
+						}
 						linkedPeersContainers = append(linkedPeersContainers, aContainer)
 						if _, ok := linkedPeersNetworks[aContainer.NetworkUUID]; !ok {
 							linkedPeersNetworks[aContainer.NetworkUUID] = true
@@ -213,6 +217,10 @@ func (ms *MetadataStore) getLinkedPeersInfo() (map[string]bool, []metadata.Conta
 		linkedFromServices := ms.getLinkedFromServicesToSelf()
 		for _, aService := range linkedFromServices {
 			for _, aContainer := range aService.Containers {
+				// Skip containers with --net=host
+				if aContainer.PrimaryIp == ms.info.hostsMap[aContainer.HostUUID].AgentIP {
+					continue
+				}
 				linkedPeersContainers = append(linkedPeersContainers, aContainer)
 				if _, ok := linkedPeersNetworks[aContainer.NetworkUUID]; !ok {
 					linkedPeersNetworks[aContainer.NetworkUUID] = true
