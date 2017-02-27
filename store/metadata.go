@@ -393,8 +393,9 @@ func (ms *MetadataStore) Reload() error {
 
 	selfNetwork, ok := networksMap[selfContainer.NetworkUUID]
 	if !ok {
-		logrus.Errorf("couldn't find selfNetwork: %v", err)
-		return fmt.Errorf("couldn't find self network in metadata")
+		errMsg := "couldn't find self network in metadata"
+		logrus.Errorf(errMsg)
+		return fmt.Errorf(errMsg)
 	}
 
 	info := &InfoFromMetadata{
