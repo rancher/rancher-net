@@ -1,10 +1,12 @@
 package store
 
 import (
-	"github.com/Sirupsen/logrus"
-	"github.com/rancher/go-rancher-metadata/metadata"
+	"fmt"
 	"net"
 	"strings"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/rancher/go-rancher-metadata/metadata"
 )
 
 const (
@@ -29,11 +31,13 @@ type InfoFromMetadata struct {
 	selfContainer     metadata.Container
 	selfHost          metadata.Host
 	selfService       metadata.Service
+	selfNetwork       metadata.Network
 	services          []metadata.Service
 	servicesMapByName map[string][]*metadata.Service
 	hosts             []metadata.Host
 	containers        []metadata.Container
 	hostsMap          map[string]metadata.Host
+	networksMap       map[string]metadata.Network
 }
 
 // NewMetadataStoreWithClientIP creates, intializes and returns a store for use with a specific Client IP to contact the metadata
@@ -158,6 +162,17 @@ func getHostsMapFromHostsArray(hosts []metadata.Host) map[string]metadata.Host {
 	return hostsMap
 }
 
+func getNetworksMapFromNetworksArray(networks []metadata.Network) map[string]metadata.Network {
+	networksMap := map[string]metadata.Network{}
+
+	for _, aNetwork := range networks {
+		networksMap[aNetwork.UUID] = aNetwork
+	}
+
+	logrus.Debugf("networksMap: %+v", networksMap)
+	return networksMap
+}
+
 func (ms *MetadataStore) getLinkedFromServicesToSelf() []*metadata.Service {
 	linkedTo := ms.info.selfService.StackName + "/" + ms.info.selfService.Name
 	logrus.Debugf("getLinkedFromServicesToSelf linkedTo: %v", linkedTo)
@@ -201,8 +216,8 @@ func (ms *MetadataStore) getLinkedPeersInfo() (map[string]bool, []metadata.Conta
 			} else {
 				for _, aService := range linkedServices {
 					for _, aContainer := range aService.Containers {
-						// Skip containers with --net=host
-						if aContainer.PrimaryIp == ms.info.hostsMap[aContainer.HostUUID].AgentIP {
+						// Skip containers whose network names don't match self
+						if ms.info.networksMap[aContainer.NetworkUUID].Name != ms.info.selfNetwork.Name {
 							continue
 						}
 						linkedPeersContainers = append(linkedPeersContainers, aContainer)
@@ -217,8 +232,8 @@ func (ms *MetadataStore) getLinkedPeersInfo() (map[string]bool, []metadata.Conta
 		linkedFromServices := ms.getLinkedFromServicesToSelf()
 		for _, aService := range linkedFromServices {
 			for _, aContainer := range aService.Containers {
-				// Skip containers with --net=host
-				if aContainer.PrimaryIp == ms.info.hostsMap[aContainer.HostUUID].AgentIP {
+				// Skip containers whose network names don't match self
+				if ms.info.networksMap[aContainer.NetworkUUID].Name != ms.info.selfNetwork.Name {
 					continue
 				}
 				linkedPeersContainers = append(linkedPeersContainers, aContainer)
@@ -369,15 +384,30 @@ func (ms *MetadataStore) Reload() error {
 
 	hostsMap := getHostsMapFromHostsArray(hosts)
 
+	networks, err := ms.mc.GetNetworks()
+	if err != nil {
+		logrus.Errorf("couldn't get networks from metadata: %v", err)
+		return err
+	}
+	networksMap := getNetworksMapFromNetworksArray(networks)
+
+	selfNetwork, ok := networksMap[selfContainer.NetworkUUID]
+	if !ok {
+		logrus.Errorf("couldn't find selfNetwork: %v", err)
+		return fmt.Errorf("couldn't find self network in metadata")
+	}
+
 	info := &InfoFromMetadata{
 		selfContainer,
 		selfHost,
 		selfService,
+		selfNetwork,
 		services,
 		servicesMapByName,
 		hosts,
 		containers,
 		hostsMap,
+		networksMap,
 	}
 
 	ms.info = info
