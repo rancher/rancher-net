@@ -254,6 +254,7 @@ func (ms *MetadataStore) doInternalRefresh() {
 
 	ms.self, _ = ms.getEntryFromContainer(ms.info.selfContainer)
 
+	seen := map[string]bool{}
 	entries := []Entry{}
 	local := map[string]Entry{}
 	remote := map[string]Entry{}
@@ -286,6 +287,12 @@ func (ms *MetadataStore) doInternalRefresh() {
 		e, _ := ms.getEntryFromContainer(c)
 
 		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
+
+		if seen[ipNoCidr] {
+			continue
+		}
+		seen[ipNoCidr] = true
+
 		if _, ok := peersMap[ipNoCidr]; ok {
 			e.Peer = true
 		}
