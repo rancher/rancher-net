@@ -3,8 +3,8 @@ set -e
 
 cd $(dirname $0)/..
 
-VERSION=v5.5.0-rancher-1-3
-HASH=f4803ea02c98921e93bfc748031e11957fd21a41
+VERSION=v5.5.1-rancher-1-1
+HASH=dd6dda8081921ac9a91345b1e088787d14a37d0c
 
 if [ "$(sha1sum -b strongswan/strongswan-${VERSION}.tar.gz 2>/dev/null | awk '{print $1}')" != "$HASH" ]; then
     mkdir -p strongswan
