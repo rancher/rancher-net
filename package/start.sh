@@ -31,13 +31,16 @@ else
     DEBUG=""
 fi
 
+export LOCAL_IP=$(ip route get 8.8.8.8 | grep via | awk '{print $7}')
+export LOCAL_IP_WITH_SUBNET=$(ip addr | grep ${LOCAL_IP} | awk '{print $2}')
+
 mkdir -p /etc/ipsec
 curl -f -u ${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY} ${CATTLE_URL}/configcontent/psk > /etc/ipsec/psk.txt
 curl -f -X PUT -d "" -u ${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY} ${CATTLE_URL}/configcontent/psk?version=latest
 GATEWAY=$(ip route get 8.8.8.8 | awk '{print $3}')
 iptables -t nat -I POSTROUTING -o eth0 -s $GATEWAY -j MASQUERADE
 exec rancher-net \
--i $(ip route get 8.8.8.8 | grep via | awk '{print $7}')/16 \
+-i ${LOCAL_IP_WITH_SUBNET} \
 --pid-file ${PIDFILE} \
 --gcm=$GCM \
 --use-metadata \
