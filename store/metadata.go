@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	defaultMetadataURL = "http://rancher-metadata.rancher.internal/2015-12-19"
+	defaultMetadataURL  = "http://rancher-metadata.rancher.internal/2015-12-19"
+	defaultSubnetPrefix = "/16"
 )
 
 // MetadataStore contains information related to metadata client, etc
@@ -28,16 +29,17 @@ type MetadataStore struct {
 // InfoFromMetadata stores the information that has been fetched from
 // metadata server
 type InfoFromMetadata struct {
-	selfContainer     metadata.Container
-	selfHost          metadata.Host
-	selfService       metadata.Service
-	selfNetwork       metadata.Network
-	services          []metadata.Service
-	servicesMapByName map[string][]*metadata.Service
-	hosts             []metadata.Host
-	containers        []metadata.Container
-	hostsMap          map[string]metadata.Host
-	networksMap       map[string]metadata.Network
+	selfContainer           metadata.Container
+	selfHost                metadata.Host
+	selfService             metadata.Service
+	selfNetwork             metadata.Network
+	selfNetworkSubnetPrefix string
+	services                []metadata.Service
+	servicesMapByName       map[string][]*metadata.Service
+	hosts                   []metadata.Host
+	containers              []metadata.Container
+	hostsMap                map[string]metadata.Host
+	networksMap             map[string]metadata.Network
 }
 
 // NewMetadataStoreWithClientIP creates, intializes and returns a store for use with a specific Client IP to contact the metadata
@@ -125,7 +127,7 @@ func (ms *MetadataStore) getEntryFromContainer(c metadata.Container) (Entry, err
 	isPeer := false
 
 	entry := Entry{
-		c.PrimaryIp + "/16",
+		c.PrimaryIp + ms.info.selfNetworkSubnetPrefix,
 		ms.info.hostsMap[c.HostUUID].AgentIP,
 		isSelf,
 		isPeer,
@@ -347,6 +349,26 @@ func getServicesMapByName(services []metadata.Service, selfService metadata.Serv
 	return servicesMapByName
 }
 
+func getSubnetPrefixFromNetworkConfig(network metadata.Network) string {
+	conf, _ := network.Metadata["cniConfig"].(map[string]interface{})
+	for _, file := range conf {
+		props, _ := file.(map[string]interface{})
+		ipamConf, found := props["ipam"].(map[string]interface{})
+		if !found {
+			logrus.Errorf("couldn't find ipam key in network config")
+			return defaultSubnetPrefix
+		}
+
+		sp, found := ipamConf["subnetPrefixSize"].(string)
+		if !found {
+			logrus.Errorf("couldn't find subnetPrefixSize in network ipam config")
+			return defaultSubnetPrefix
+		}
+		return sp
+	}
+	return defaultSubnetPrefix
+}
+
 // Reload is used to refresh/reload the data from metadata
 func (ms *MetadataStore) Reload() error {
 	logrus.Debugf("Reloading ...")
@@ -403,11 +425,14 @@ func (ms *MetadataStore) Reload() error {
 		return fmt.Errorf("couldn't find self network in metadata")
 	}
 
+	selfNetworkSubnetPrefix := getSubnetPrefixFromNetworkConfig(selfNetwork)
+
 	info := &InfoFromMetadata{
 		selfContainer,
 		selfHost,
 		selfService,
 		selfNetwork,
+		selfNetworkSubnetPrefix,
 		services,
 		servicesMapByName,
 		hosts,
