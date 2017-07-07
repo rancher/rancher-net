@@ -3,17 +3,18 @@ package vxlan
 
 import (
 	"errors"
+	"fmt"
 	"net"
-	"strings"
 	"sync"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher-metadata/metadata"
-	"github.com/rancher/rancher-net/store"
 )
 
 const (
-	metadataURL = "http://rancher-metadata/2015-12-19"
+	changeCheckInterval = 5
+	metadataURL         = "http://rancher-metadata/2015-12-19"
+	ipLabel             = "io.rancher.container.ip"
 
 	vxlanInterfaceName = "vtep1042"
 	vxlanVni           = 1042
@@ -27,31 +28,27 @@ const (
 
 // Overlay is used to store the VXLAN overlay information
 type Overlay struct {
-	sync.Mutex
+	mu sync.Mutex
+	m  metadata.Client
+	v  *vxlanIntfInfo
 
-	m                        metadata.Client
-	db                       store.Store
-	peersMapping             map[string]net.IP
-	prevPeerEntries          map[string]store.Entry
-	prevNonPeerRemoteEntries map[string]store.Entry
-	v                        *vxlanIntfInfo
-}
-
-type entriesDiff struct {
-	toAdd map[string]store.Entry
-	toDel map[string]store.Entry
-	toUpd map[string]store.Entry
-	noop  map[string]store.Entry
+	local  map[string]bool
+	remote map[string]bool
 }
 
 // NewOverlay is used to create a new VXLAN Overlay network
-func NewOverlay(configDir string, db store.Store) (*Overlay, error) {
-	logrus.Debugf("vxlan: creating new overlay db=%+v", db)
-	o := &Overlay{
-		db: db,
+func NewOverlay(configDir string) (*Overlay, error) {
+	logrus.Debugf("Creating new VXLAN Overlay, metadataURL: %v", metadataURL)
+	m, err := metadata.NewClientAndWait(metadataURL)
+	if err != nil {
+		logrus.Errorf("couldn't create metadata client: %v", err)
+		return nil, err
 	}
 
-	var err error
+	o := &Overlay{
+		m: m,
+	}
+
 	o.v, err = o.getDefaultVxlanInterfaceInfo()
 	if err != nil {
 		logrus.Errorf("vxlan: couldn't get default vxlan inteface info: %v", err)
@@ -79,16 +76,20 @@ func (o *Overlay) Start(launch bool, logFile string) {
 	} else {
 		logrus.Infof("vxlan: Start: success")
 	}
+
+	go o.m.OnChange(changeCheckInterval, o.onChangeNoError)
+}
+
+func (o *Overlay) onChangeNoError(version string) {
+	if err := o.Reload(); err != nil {
+		logrus.Errorf("Failed to apply VXLAN rules: %v", err)
+	}
 }
 
 // Reload does a db reload and reconfigures the configuration
 // with the new data
 func (o *Overlay) Reload() error {
 	logrus.Infof("vxlan: Reload")
-	if err := o.db.Reload(); err != nil {
-		return err
-	}
-
 	err := o.configure()
 	if err != nil {
 		logrus.Errorf("vxlan: Reload: couldn't configure: %v", err)
@@ -97,289 +98,165 @@ func (o *Overlay) Reload() error {
 }
 
 func (o *Overlay) configure() error {
-	//o.Lock()
-	//defer o.Unlock()
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
 	logrus.Infof("vxlan: configure")
+	var (
+		routesMap    = make(map[string]*net.IPNet)       // {ContainerIP: ipnet}
+		arpMap       = make(map[string]net.HardwareAddr) // {ContainerIP: mac}
+		fdbMap       = make(map[string]net.HardwareAddr) // {HostIP: mac}
+		peersHostMap = make(map[string]string)           // {HostUUID: peerContainerIP}
+	)
+	o.local = make(map[string]bool)
+	o.remote = make(map[string]bool)
+
+	selfHost, err := o.m.GetSelfHost()
+	if err != nil {
+		logrus.Errorf("Couldn't get self host from metadata: %v", err)
+		return err
+	}
+	selfContainer, err := o.m.GetSelfContainer()
+	if err != nil {
+		logrus.Errorf("Couldn't get self container from metadata: %v", err)
+		return err
+	}
+	o.local[selfContainer.PrimaryIp] = true
+	selfService, err := o.m.GetSelfService()
+	if err != nil {
+		logrus.Errorf("Couldn't get self service from metadata: %v", err)
+		return err
+	}
+	allServices, err := o.m.GetServices()
+	if err != nil {
+		logrus.Errorf("Couldn't get self service from metadata: %v", err)
+		return err
+	}
+	allContainers, err := o.m.GetContainers()
+	if err != nil {
+		logrus.Errorf("Couldn't get containers from metadata: %v", err)
+		return err
+	}
+	networks, err := o.m.GetNetworks()
+	if err != nil {
+		logrus.Errorf("Couldn't get networks from metadata: %v", err)
+		return err
+	}
+	networksMap := getNetworksMap(networks)
+	selfNetwork, ok := networksMap[selfContainer.NetworkUUID]
+	if !ok {
+		return fmt.Errorf("Couldn't find self network in metadata")
+	}
+	hosts, err := o.m.GetHosts()
+	if err != nil {
+		logrus.Errorf("Couldn't get hosts from metadata: %v", err)
+		return err
+	}
+	hostsMap := getHostsMap(hosts)
 
 	// First create the local VTEP interface
-	err := o.checkAndCreateVTEP()
+	err = o.checkAndCreateVTEP()
 	if err != nil {
 		logrus.Errorf("Error creating VTEP interface")
 		return err
 	}
 
-	var firstErr error
-	//localHostIP := o.db.LocalHostIpAddress()
+	peersNetworks, linkedPeersContainers := getLinkedPeersInfo(allServices, selfService, networksMap, selfNetwork)
 
-	// Install/Update/Delete peer entries
-	currentPeerEntries := o.db.PeerEntriesMap()
-	delete(currentPeerEntries, o.db.LocalIpAddress())
-	peerEntriesDiff := calculateDiffOfEntries(o.prevPeerEntries, currentPeerEntries)
-	o.handlePeerEntries(peerEntriesDiff)
+	// Add self network to peersNetworks
+	peersNetworks[selfContainer.NetworkUUID] = true
 
-	o.peersMapping = buildPeersMapping(o.prevPeerEntries)
+	allPeersContainers := append(selfService.Containers, linkedPeersContainers...)
+	for _, c := range allPeersContainers {
+		if c.HostUUID == selfHost.UUID || !ok {
+			continue
+		}
+		ip := net.ParseIP(c.PrimaryIp)
+		_, ipnet, err := net.ParseCIDR(c.PrimaryIp + "/32")
+		if err != nil {
+			logrus.Errorf("Failed to parseCIDR in peersContainers: %v", err)
+			continue
+		}
+		peerMAC, err := getMACAddressForVxlanIP(vxlanMACRange, ip)
+		if err != nil {
+			logrus.Errorf("Failed to ParseMAC in peersContainers: %v", err)
+			continue
+		}
+		hostIpAddress := hostsMap[c.HostUUID].AgentIP
 
-	// Install/Update/Delete remote entries
-	curNonPeerRemoteEntries := o.db.RemoteNonPeerEntriesMap()
-	remoteEntriesDiff := calculateDiffOfEntries(o.prevNonPeerRemoteEntries, curNonPeerRemoteEntries)
-	o.handleNonPeerRemoteEntries(remoteEntriesDiff, o.peersMapping)
+		routesMap[ip.To4().String()] = ipnet
+		arpMap[ip.To4().String()] = peerMAC
+		fdbMap[hostIpAddress] = peerMAC
 
-	return firstErr
-}
-
-func (o *Overlay) cleanup() error {
-	//o.Lock()
-	//defer o.Unlock()
-	logrus.Infof("vxlan: cleanup")
-
-	curNonPeerRemoteEntries := o.db.RemoteNonPeerEntriesMap()
-	cleanupRemoteEntriesDiff := entriesDiff{
-		map[string]store.Entry{},
-		curNonPeerRemoteEntries,
-		map[string]store.Entry{},
-		map[string]store.Entry{},
+		peersHostMap[c.HostUUID] = ip.To4().String()
 	}
-	o.handleNonPeerRemoteEntries(cleanupRemoteEntriesDiff, o.peersMapping)
 
-	currentPeerEntries := o.db.PeerEntriesMap()
-	cleanupPeerEntriesDiff := entriesDiff{
-		map[string]store.Entry{},
-		currentPeerEntries,
-		map[string]store.Entry{},
-		map[string]store.Entry{},
+	logrus.Debugf("Get peersHostMap: %v", peersHostMap)
+
+	for _, c := range allContainers {
+		// check if the container networkUUID is part of peersNetworks
+		_, isPresentInPeersNetworks := peersNetworks[c.NetworkUUID]
+
+		if !isPresentInPeersNetworks ||
+			c.PrimaryIp == "" ||
+			c.NetworkFromContainerUUID != "" ||
+			c.HostUUID == selfHost.UUID {
+			continue
+		}
+
+		o.remote[c.PrimaryIp] = true
+
+		_, ipnet, err := net.ParseCIDR(c.PrimaryIp + "/32")
+		if err != nil {
+			logrus.Errorf("Failed to parseCIDR in nonPeersContainers: %v", err)
+			continue
+		}
+		peerIpAddress, ok := peersHostMap[c.HostUUID]
+		if !ok || c.PrimaryIp == peerIpAddress {
+			// skip peer containers
+			continue
+		}
+		peerIp := net.ParseIP(peersHostMap[c.HostUUID])
+		peerMAC, err := getMACAddressForVxlanIP(vxlanMACRange, peerIp)
+		if err != nil {
+			logrus.Errorf("Failed to ParseMAC in nonPeersContainers: %v", err)
+			continue
+		}
+
+		routesMap[c.PrimaryIp] = ipnet
+		arpMap[c.PrimaryIp] = peerMAC
 	}
-	o.handlePeerEntries(cleanupPeerEntriesDiff)
 
-	err := o.checkAndDeleteVTEP()
+	vtepLink, err := getNetLink(o.v.name)
 	if err != nil {
-		logrus.Errorf("Error deleting VTEP interface")
+		return err
+	}
+	currentRouteEntries, err := getCurrentRouteEntries(vtepLink)
+	if err != nil {
+		return err
+	}
+	err = updateRoute(currentRouteEntries, getDesiredRouteEntries(vtepLink, routesMap))
+	if err != nil {
+		return err
+	}
+	currentARPEntries, err := getCurrentARPEntries(vtepLink)
+	if err != nil {
+		return err
+	}
+	err = updateARP(currentARPEntries, getDesiredARPEntries(vtepLink, arpMap))
+	if err != nil {
+		return err
+	}
+	currentFDBEntries, err := getCurrentFDBEntries(vtepLink)
+	if err != nil {
+		return err
+	}
+	err = updateFDB(currentFDBEntries, getDesiredFDBEntries(vtepLink, fdbMap))
+	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-// buildPeersMapping takes the entries from db and builds a map
-// to lookup what Network Agent/peer is running behind a host.
-// Host IP address -> VXLAN range mapped IP address of the N.A
-func buildPeersMapping(entries map[string]store.Entry) map[string]net.IP {
-	logrus.Debugf("vxlan: buildPeersMapping")
-	logrus.Debugf("entries: %v", entries)
-
-	peersMapping := make(map[string]net.IP)
-
-	for _, entry := range entries {
-		if entry.Peer && !entry.Self {
-			entryIP, _, err := net.ParseCIDR(entry.IpAddress)
-			if err != nil {
-				logrus.Errorf("err: %#v", err)
-				continue
-			}
-			peersMapping[entry.HostIpAddress] = entryIP
-		}
-	}
-
-	logrus.Debugf("peersMapping: %+v", peersMapping)
-	return peersMapping
-}
-
-// handlePeerEntries takes care of installing the ARP and bridge entry
-// Peer = Container running the rancher-net/ipsec/vxlan
-func (o *Overlay) handlePeerEntries(diff entriesDiff) {
-	logrus.Debugf("before handlePeerEntries o.prevPeerEntries: %+v", o.prevPeerEntries)
-
-	prevPeerEntries := o.prevPeerEntries
-	o.prevPeerEntries = make(map[string]store.Entry)
-
-	for _, e := range diff.noop {
-		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
-		o.prevPeerEntries[ipNoCidr] = e
-	}
-
-	logrus.Debugf("handlePeerEntries: toAdd: %+v", diff.toAdd)
-	for _, e := range diff.toAdd {
-		logrus.Debugf("e: %v", e)
-		if e.Self {
-			logrus.Debugf("skipping self")
-			continue
-		}
-
-		peer, err := newPeerVxlanEntry(o.v.name, e)
-		if err != nil {
-			logrus.Errorf("Error creating new peer entry: %v", err)
-			continue
-		}
-		if peer == nil {
-			logrus.Errorf("Got nil for e: %v", e)
-			continue
-		}
-		logrus.Debugf("vxlan: Adding peer: %+v", *peer)
-		err = peer.add()
-		if err != nil {
-			logrus.Errorf("vxlan: error adding peer entry: %v", err)
-		} else {
-			ipNoCidr := strings.Split(e.IpAddress, "/")[0]
-			o.prevPeerEntries[ipNoCidr] = e
-		}
-	}
-
-	logrus.Debugf("handlePeerEntries: toDel: %+v", diff.toDel)
-	for _, e := range diff.toDel {
-		logrus.Debugf("e: %v", e)
-		if e.Self {
-			logrus.Debugf("skipping self")
-			continue
-		}
-
-		peer, err := newPeerVxlanEntry(o.v.name, e)
-		if err != nil {
-			logrus.Errorf("Error creating new peer entry: %v", err)
-			continue
-		}
-		if peer == nil {
-			logrus.Errorf("Got nil for e: %v", e)
-			continue
-		}
-		logrus.Debugf("vxlan: Deleting peer: %+v", *peer)
-		err = peer.del()
-		if err != nil {
-			logrus.Errorf("vxlan: error deleting peer entry: %v", err)
-			ipNoCidr := strings.Split(e.IpAddress, "/")[0]
-			o.prevPeerEntries[ipNoCidr] = e
-		}
-	}
-
-	logrus.Debugf("handlePeerEntries: toUpd: %+v", diff.toUpd)
-	for _, e := range diff.toUpd {
-		logrus.Debugf("e: %v", e)
-		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
-		if e.Self {
-			logrus.Debugf("skipping self")
-			continue
-		}
-
-		logrus.Debugf("Not processing update of e: %+v", e)
-		o.prevPeerEntries[ipNoCidr] = prevPeerEntries[ipNoCidr]
-		continue
-
-		peer, err := newPeerVxlanEntry(o.v.name, e)
-		if err != nil {
-			logrus.Errorf("Error creating new peer entry: %v, keep prev entry", err)
-			o.prevPeerEntries[ipNoCidr] = prevPeerEntries[ipNoCidr]
-			continue
-		}
-		if peer == nil {
-			logrus.Errorf("Got nil for e: %v, keep prev entry", e)
-			o.prevPeerEntries[ipNoCidr] = prevPeerEntries[ipNoCidr]
-			continue
-		}
-		logrus.Debugf("vxlan: Updating peer: %+v", *peer)
-		err = peer.upd()
-		if err != nil {
-			logrus.Errorf("vxlan: error adding peer entry: %v, keep prev entry", err)
-			// If there was an error updating, keep the old entry
-			o.prevPeerEntries[ipNoCidr] = prevPeerEntries[ipNoCidr]
-		} else {
-			o.prevPeerEntries[ipNoCidr] = e
-		}
-	}
-
-	logrus.Debugf("after handlePeerEntries: o.prevPeerEntries: %+v", o.prevPeerEntries)
-}
-
-func (o *Overlay) handleNonPeerRemoteEntries(diff entriesDiff, peersMapping map[string]net.IP) {
-	logrus.Debugf("before handleNonPeerRemoteEntries prevNonPeerRemoteEntries: %+v", o.prevNonPeerRemoteEntries)
-
-	prevNonPeerRemoteEntries := o.prevNonPeerRemoteEntries
-	o.prevNonPeerRemoteEntries = make(map[string]store.Entry)
-
-	for _, e := range diff.noop {
-		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
-		o.prevNonPeerRemoteEntries[ipNoCidr] = e
-	}
-
-	logrus.Debugf("handleNonPeerRemoteEntries: toAdd: %+v", diff.toAdd)
-	for _, e := range diff.toAdd {
-		logrus.Debugf("e: %v", e)
-		rEntry, err := newRemoteVxlanEntry(o.v.name, e, peersMapping)
-		if err != nil {
-			logrus.Errorf("Error creating new remote entry: %v", err)
-			continue
-		}
-		if rEntry == nil {
-			logrus.Debugf("Got nil for e: %v", e)
-			continue
-		}
-		if rEntry.via == nil {
-			logrus.Debugf("Got via=nil for e: %v", e)
-			continue
-		}
-
-		logrus.Debugf("vxlan: Adding remote entry: %+v", *rEntry)
-		err = rEntry.add()
-		if err != nil {
-			logrus.Errorf("vxlan: error adding remote entry: %v", err)
-		} else {
-			ipNoCidr := strings.Split(e.IpAddress, "/")[0]
-			o.prevNonPeerRemoteEntries[ipNoCidr] = e
-		}
-	}
-
-	logrus.Debugf("handleNonPeerRemoteEntries: toDel: %v", diff.toDel)
-	for _, e := range diff.toDel {
-		logrus.Debugf("e: %v", e)
-		rEntry, err := newRemoteVxlanEntry(o.v.name, e, peersMapping)
-		if err != nil {
-			logrus.Errorf("Error creating new remote entry: %v", err)
-			continue
-		}
-		if rEntry == nil {
-			logrus.Errorf("Got nil for e: %v", e)
-			continue
-		}
-
-		logrus.Debugf("vxlan: Deleting remote entry: %+v", *rEntry)
-		err = rEntry.del()
-		if err != nil {
-			logrus.Errorf("vxlan: error deleting remote entry: %v", err)
-			ipNoCidr := strings.Split(e.IpAddress, "/")[0]
-			o.prevNonPeerRemoteEntries[ipNoCidr] = e
-		}
-	}
-
-	logrus.Debugf("handleNonPeerRemoteEntries: toUpd: %v", diff.toUpd)
-	for _, e := range diff.toUpd {
-		logrus.Debugf("e: %v", e)
-		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
-
-		logrus.Debugf("Not processing update of e: %+v", e)
-		o.prevNonPeerRemoteEntries[ipNoCidr] = prevNonPeerRemoteEntries[ipNoCidr]
-		continue
-
-		rEntry, err := newRemoteVxlanEntry(o.v.name, e, peersMapping)
-		if err != nil {
-			logrus.Errorf("Error creating new remote entry: %v", err)
-			o.prevNonPeerRemoteEntries[ipNoCidr] = prevNonPeerRemoteEntries[ipNoCidr]
-			continue
-		}
-		if rEntry == nil {
-			logrus.Errorf("Got nil for e: %v", e)
-			o.prevNonPeerRemoteEntries[ipNoCidr] = prevNonPeerRemoteEntries[ipNoCidr]
-			continue
-		}
-
-		logrus.Debugf("vxlan: Updating remote entry: %+v", *rEntry)
-		err = rEntry.upd()
-		if err != nil {
-			logrus.Errorf("vxlan: error updating remote entry: %v", err)
-			// If there was an error updating, keep the old entry
-			o.prevNonPeerRemoteEntries[ipNoCidr] = prevNonPeerRemoteEntries[ipNoCidr]
-		} else {
-			o.prevNonPeerRemoteEntries[ipNoCidr] = e
-		}
-	}
-
-	logrus.Debugf("handleNonPeerRemoteEntries: o.prevNonPeerRemoteEntries: %+v", o.prevNonPeerRemoteEntries)
 }
 
 // GetMyVTEPInfo is used to figure out the MAC address to be assigned
@@ -387,7 +264,12 @@ func (o *Overlay) handleNonPeerRemoteEntries(diff entriesDiff, peersMapping map[
 func (o *Overlay) GetMyVTEPInfo() (net.HardwareAddr, error) {
 	logrus.Debugf("vxlan: GetMyVTEPInfo")
 
-	myRancherIPString := o.db.LocalIpAddress()
+	selfContainer, err := o.m.GetSelfContainer()
+	if err != nil {
+		logrus.Errorf("Couldn't get self container from metadata: %v", err)
+		return nil, err
+	}
+	myRancherIPString := selfContainer.PrimaryIp
 	myRancherIP := net.ParseIP(myRancherIPString)
 	logrus.Debugf("myRancherIP: %v", myRancherIPString)
 	mac, err := getMACAddressForVxlanIP(vxlanMACRange, myRancherIP)
@@ -459,4 +341,17 @@ func (o *Overlay) checkAndDeleteVTEP() error {
 	}
 
 	return nil
+}
+
+func (o *Overlay) IsRemote(ipAddress string) bool {
+	if _, ok := o.local[ipAddress]; ok {
+		logrus.Debugf("Local: %s", ipAddress)
+		return false
+	}
+
+	_, ok := o.remote[ipAddress]
+	if ok {
+		logrus.Debugf("Remote: %s", ipAddress)
+	}
+	return ok
 }

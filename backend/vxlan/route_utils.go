@@ -2,77 +2,69 @@ package vxlan
 
 import (
 	"net"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 )
 
-func addRoute(ip *net.IPNet, via net.IP, intfName string) error {
-	logrus.Debugf("vxlan: adding route: %v via %v intfName: %v", ip, via, intfName)
-	r := &netlink.Route{
-		Scope: netlink.SCOPE_UNIVERSE,
-		Dst:   ip,
-	}
-
-	if via != nil {
-		r.Gw = via
-	}
-
-	if intfName != "" {
-		l, err := findVxlanInterface(intfName)
-		if err != nil {
-			logrus.Errorf("Couldn't find link by name: %v", intfName)
-			return err
-		}
-		r.LinkIndex = l.Attrs().Index
-	}
-
-	err := netlink.RouteAdd(r)
+func getCurrentRouteEntries(link netlink.Link) (map[string]*netlink.Route, error) {
+	existRoutes, err := netlink.RouteList(link, netlink.FAMILY_V4)
 	if err != nil {
-		logrus.Errorf("vxlan: error adding route: %v", err)
-		return err
+		logrus.Errorf("Failed to getCurrentRouteEntries, RouteList: %v", err)
+		return nil, err
 	}
 
-	return nil
+	routeEntries := make(map[string]*netlink.Route)
+	for index, r := range existRoutes {
+		dstIP := strings.Split(r.Dst.IP.To4().String(), "/")[0]
+		routeEntries[dstIP] = &existRoutes[index]
+	}
+
+	logrus.Debugf("getCurrentRouteEntries: routeEntries %v", routeEntries)
+	return routeEntries, nil
 }
 
-func updateRoute(ip *net.IPNet, via net.IP, intfName string) error {
-	logrus.Debugf("vxlan: updating route: %v via %v intfName: %v", ip, via, intfName)
+func getDesiredRouteEntries(link netlink.Link, routes map[string]*net.IPNet) map[string]*netlink.Route {
+	routeEntries := make(map[string]*netlink.Route)
 
-	err := delRoute(ip, nil, intfName)
-	if err != nil {
-		logrus.Errorf("vxlan: error updating route: %v", err)
-		return err
+	for ip, ipnet := range routes {
+		r := &netlink.Route{
+			Scope:     netlink.SCOPE_UNIVERSE,
+			Dst:       ipnet,
+			LinkIndex: link.Attrs().Index,
+		}
+		routeEntries[ip] = r
 	}
 
-	return addRoute(ip, via, intfName)
+	logrus.Debugf("getDesiredRouteEntries: routeEntries %v", routeEntries)
+	return routeEntries
 }
 
-func delRoute(ip *net.IPNet, via net.IP, intfName string) error {
-	logrus.Debugf("vxlan: deleting route: %v via %v intfName: %v", ip, via, intfName)
-	r := &netlink.Route{
-		Scope: netlink.SCOPE_UNIVERSE,
-		Dst:   ip,
-	}
+func updateRoute(oldEntries map[string]*netlink.Route, newEntries map[string]*netlink.Route) error {
+	var e error
 
-	if via != nil {
-		r.Gw = via
-	}
-
-	if intfName != "" {
-		l, err := findVxlanInterface(intfName)
-		if err != nil {
-			logrus.Errorf("Couldn't find link by name: %v", intfName)
-			return err
+	for ip, oe := range oldEntries {
+		_, ok := newEntries[ip]
+		if ok {
+			delete(newEntries, ip)
+		} else {
+			err := netlink.RouteDel(oe)
+			if err != nil {
+				logrus.Errorf("updateRoute: failed to RouteDel, %v", err)
+				e = errors.Wrap(e, err.Error())
+			}
 		}
-		r.LinkIndex = l.Attrs().Index
 	}
 
-	err := netlink.RouteDel(r)
-	if err != nil {
-		logrus.Errorf("vxlan: error adding route: %v", err)
-		return err
+	for _, ne := range newEntries {
+		err := netlink.RouteAdd(ne)
+		if err != nil {
+			logrus.Errorf("updateRoute: failed to RouteAdd, %v", err)
+			e = errors.Wrap(e, err.Error())
+		}
 	}
 
-	return nil
+	return e
 }

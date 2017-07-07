@@ -144,39 +144,47 @@ func appMain(ctx *cli.Context) error {
 	useMetadata := ctx.GlobalBool(metadataFlag)
 	logrus.Infof("Using metadata: %v", useMetadata)
 
-	var db store.Store
-	var err error
-	if useMetadata {
-		logrus.Infof("Reading info from metadata")
-		db, err = store.NewMetadataStore("")
-		if err != nil {
-			logrus.Errorf("Error creating metadata store: %v", err)
-			return err
-		}
-
-	} else {
-		logrus.Infof("Reading info from config file")
-		db = store.NewSimpleStore(waitForFile(ctx.GlobalString("file")), "")
-	}
-	db.Reload()
+	done := make(chan error)
 
 	var overlay backend.Backend
 	if backendToUse == backendNameVxlan {
-		overlay, _ = vxlan.NewOverlay("", db)
+		vxlanOverlay, err := vxlan.NewOverlay("")
+		if err != nil {
+			return err
+		}
+		overlay = vxlanOverlay
 		overlay.Start(true, "")
+		go func() {
+			done <- arp.ListenAndServeForVXLAN(vxlanOverlay, "eth0")
+		}()
 	} else {
+		var db store.Store
+		var err error
+		if useMetadata {
+			logrus.Infof("Reading info from metadata")
+			db, err = store.NewMetadataStore("")
+			if err != nil {
+				logrus.Errorf("Error creating metadata store: %v", err)
+				return err
+			}
+
+		} else {
+			logrus.Infof("Reading info from config file")
+			db = store.NewSimpleStore(waitForFile(ctx.GlobalString("file")), "")
+		}
+
+		db.Reload()
 		ipsecOverlay := ipsec.NewOverlay(ctx.GlobalString("ipsec-config"), db)
 		if !ctx.GlobalBool("gcm") {
 			ipsecOverlay.Blacklist = []string{"aes128gcm16"}
 		}
 		overlay = ipsecOverlay
 		overlay.Start(ctx.GlobalBool("charon-launch"), ctx.GlobalString("charon-log"))
-	}
 
-	done := make(chan error)
-	go func() {
-		done <- arp.ListenAndServe(db, "eth0")
-	}()
+		go func() {
+			done <- arp.ListenAndServe(db, "eth0")
+		}()
+	}
 
 	listenPort := ctx.GlobalString("listen")
 	logrus.Debugf("About to start server and listen on port: %v", listenPort)
@@ -192,7 +200,7 @@ func appMain(ctx *cli.Context) error {
 		return err
 	}
 
-	if useMetadata {
+	if useMetadata && backendToUse == backendNameIpsec {
 		go func() {
 			mdch := mdchandler.NewMetadataChangeHandler(overlay)
 			done <- mdch.Start()

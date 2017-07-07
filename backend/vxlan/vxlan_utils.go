@@ -94,61 +94,6 @@ func findVxlanInterface(name string) (netlink.Link, error) {
 	return link, nil
 }
 
-// `bridge fdb add ${PEER_VTEP_MAC} dev ${VXLAN_INTF} dst ${PEER_HOST_PUBLIC_IP}`
-func addVxlanForwardingEntry(intfName string, mac net.HardwareAddr, ip net.IP) error {
-	logrus.Debugf("vxlan: Adding route mac: %v ip:%v", mac, ip)
-
-	l, err := netlink.LinkByName(intfName)
-	if err != nil {
-		return err
-	}
-
-	n := &netlink.Neigh{
-		IP:           ip,
-		HardwareAddr: mac,
-		LinkIndex:    l.Attrs().Index,
-		State:        netlink.NUD_PERMANENT,
-		Flags:        netlink.NTF_SELF,
-		Family:       syscall.AF_BRIDGE,
-	}
-
-	err = netlink.NeighAdd(n)
-
-	if err != nil {
-		logrus.Errorf("vxlan: Couldn't add neighbor: %v", err)
-		return err
-	}
-
-	return nil
-}
-
-func deleteVxlanForwardingEntry(intfName string, mac net.HardwareAddr, ip net.IP) error {
-	logrus.Debugf("vxlan: Deleting route: mac: %v ip:%v", mac, ip)
-
-	l, err := netlink.LinkByName(intfName)
-	if err != nil {
-		return err
-	}
-
-	n := &netlink.Neigh{
-		IP:           ip,
-		HardwareAddr: mac,
-		LinkIndex:    l.Attrs().Index,
-		State:        netlink.NUD_PERMANENT,
-		Flags:        netlink.NTF_SELF,
-		Family:       syscall.AF_BRIDGE,
-	}
-
-	err = netlink.NeighDel(n)
-
-	if err != nil {
-		logrus.Errorf("vxlan: Couldn't delete neighbor: %v", err)
-		return err
-	}
-
-	return nil
-}
-
 // getMACAddressForVxlanIP uses the input VXLAN MAC prefix, IP
 // to build a MAC address.
 // For example if the MAC prefix is 0E:00:00:00:00:00 and
