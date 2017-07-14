@@ -7,6 +7,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/mdlayher/arp"
 	"github.com/mdlayher/ethernet"
+	"github.com/rancher/rancher-net/backend/vxlan"
 	"github.com/rancher/rancher-net/store"
 )
 
@@ -41,6 +42,39 @@ func ListenAndServe(db store.Store, ifaceName string) error {
 			if err := client.Reply(arpRequest, listenIface.HardwareAddr, arpRequest.TargetIP); err != nil {
 				return err
 			}
+		}
+	}
+}
+
+func ListenAndServeForVXLAN(o *vxlan.Overlay, ifaceName string) error {
+	listenIface, err := net.InterfaceByName(ifaceName)
+	if err != nil {
+		return err
+	}
+
+	client, err := arp.NewClient(listenIface)
+	if err != nil {
+		return err
+	}
+
+	logrus.Infof("Listening for ARP requests on %s", ifaceName)
+	for {
+		arpRequest, iface, err := client.Read()
+		if err != nil {
+			return err
+		}
+
+		if arpRequest.Operation != arp.OperationRequest ||
+			(!bytes.Equal(iface.Destination, ethernet.Broadcast) &&
+				!bytes.Equal(iface.Destination, listenIface.HardwareAddr)) {
+			continue
+		}
+
+		targetIp := arpRequest.TargetIP.String()
+		logrus.Debugf("Arp request for %s", targetIp)
+		if o.IsRemote(targetIp) {
+			logrus.Debugf("Sending arp reply for %s", targetIp)
+			client.Reply(arpRequest, listenIface.HardwareAddr, arpRequest.TargetIP)
 		}
 	}
 }
