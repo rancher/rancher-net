@@ -19,9 +19,12 @@ const (
 
 var (
 	defaultIkeConf = []byte(`{
+		"version" : "2",
 		"local_addrs": [],
 		"proposals": ["aes128gcm16-sha256-modp2048", "aes-sha1-modp2048"],
 		"encap": "yes",
+		"dpd_delay": "10s",
+		"keyingtries": "0",
 		"local": {
 			"auth": "psk"
 		},
@@ -35,6 +38,7 @@ var (
 		"esp_proposals":  ["aes128gcm16-modp2048", "aes-modp2048"],
 		"start_action": "start",
 		"close_action": "start",
+		"dpd_action": "restart",
 		"mode": "tunnel",
 		"policies": "no"
 	}`)
