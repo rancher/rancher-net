@@ -267,7 +267,14 @@ func (ms *MetadataStore) doInternalRefresh() {
 	// Add self network to peersNetworks
 	peersNetworks[ms.info.selfContainer.NetworkUUID] = true
 
-	allPeersContainers := append(ms.info.selfService.Containers, linkedPeersContainers...)
+	var allPeersContainers []metadata.Container
+	allPeersContainers = append(allPeersContainers, linkedPeersContainers...)
+	for _, c := range ms.info.selfService.Containers {
+		if c.State == "running" || c.State == "starting" {
+			allPeersContainers = append(allPeersContainers, c)
+		}
+	}
+
 	for _, sc := range allPeersContainers {
 		e, _ := ms.getEntryFromContainer(sc)
 		e.Peer = true
