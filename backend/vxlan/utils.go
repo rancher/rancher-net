@@ -151,3 +151,50 @@ func getHostsMap(hosts []metadata.Host) map[string]metadata.Host {
 	logrus.Debugf("hostsMap: %v", hostsMap)
 	return hostsMap
 }
+
+func getLocalRouterInfo(networks []metadata.Network, host metadata.Host, services []metadata.Service) (metadata.Network, metadata.Container, metadata.Service) {
+	var (
+		vxlanNetwork metadata.Network
+		localRouter  metadata.Container
+		selfService  metadata.Service
+	)
+	for _, aNetwork := range networks {
+		if aNetwork.EnvironmentUUID != host.EnvironmentUUID {
+			continue
+		}
+		_, ok := aNetwork.Metadata["cniConfig"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		vxlanNetwork = aNetwork
+		break
+	}
+
+Loop:
+	for _, service := range services {
+		if !(service.Kind == "networkDriverService" &&
+			service.Name == service.PrimaryServiceName) {
+			continue
+		}
+
+		for _, aContainer := range service.Containers {
+			if host.UUID == aContainer.HostUUID {
+				localRouter = aContainer
+				selfService = service
+				break Loop
+			}
+		}
+	}
+
+	return vxlanNetwork, localRouter, selfService
+}
+
+func getBridgeSubnet(network metadata.Network) string {
+	var bridgeSubnet string
+	conf, _ := network.Metadata["cniConfig"].(map[string]interface{})
+	for _, file := range conf {
+		props, _ := file.(map[string]interface{})
+		bridgeSubnet, _ = props["bridgeSubnet"].(string)
+	}
+	return bridgeSubnet
+}

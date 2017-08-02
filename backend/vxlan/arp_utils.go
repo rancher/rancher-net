@@ -8,7 +8,7 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-func getCurrentARPEntries(link netlink.Link) (map[string]*netlink.Neigh, error) {
+func getCurrentARPEntries(link netlink.Link, ipnet *net.IPNet) (map[string]*netlink.Neigh, error) {
 	neighs, err := netlink.NeighList(link.Attrs().Index, netlink.FAMILY_V4)
 	if err != nil {
 		logrus.Errorf("Failed to getCurrentARPEntries, NeighList: %v", err)
@@ -17,8 +17,10 @@ func getCurrentARPEntries(link netlink.Link) (map[string]*netlink.Neigh, error) 
 
 	arpEntries := make(map[string]*netlink.Neigh)
 	for index, n := range neighs {
-		logrus.Debugf("getCurrentARPEntries: Neigh %+v", n)
-		arpEntries[n.IP.To4().String()] = &neighs[index]
+		if ipnet.Contains(n.IP.To4()) {
+			logrus.Debugf("getCurrentARPEntries: Neigh %+v", n)
+			arpEntries[n.IP.To4().String()] = &neighs[index]
+		}
 	}
 
 	logrus.Debugf("getCurrentARPEntries: arpEntries %v", arpEntries)
