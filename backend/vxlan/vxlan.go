@@ -166,9 +166,16 @@ func (o *Overlay) configure() error {
 	// Add self network to peersNetworks
 	peersNetworks[selfContainer.NetworkUUID] = true
 
-	allPeersContainers := append(selfService.Containers, linkedPeersContainers...)
+	var allPeersContainers []metadata.Container
+	allPeersContainers = append(allPeersContainers, linkedPeersContainers...)
+	for _, c := range selfService.Containers {
+		if c.State == "running" || c.State == "starting" {
+			allPeersContainers = append(allPeersContainers, c)
+		}
+	}
+
 	for _, c := range allPeersContainers {
-		if c.HostUUID == selfHost.UUID || !ok {
+		if c.HostUUID == selfHost.UUID {
 			continue
 		}
 		ip := net.ParseIP(c.PrimaryIp)
@@ -194,6 +201,9 @@ func (o *Overlay) configure() error {
 	logrus.Debugf("Get peersHostMap: %v", peersHostMap)
 
 	for _, c := range allContainers {
+		if !(c.State == "running" || c.State == "starting") {
+			continue
+		}
 		// check if the container networkUUID is part of peersNetworks
 		_, isPresentInPeersNetworks := peersNetworks[c.NetworkUUID]
 
