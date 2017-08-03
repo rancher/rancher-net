@@ -218,6 +218,9 @@ func (ms *MetadataStore) getLinkedPeersInfo() (map[string]bool, []metadata.Conta
 			} else {
 				for _, aService := range linkedServices {
 					for _, aContainer := range aService.Containers {
+						if !(aContainer.State == "running" || aContainer.State == "starting") {
+							continue
+						}
 						// Skip containers whose network names don't match self
 						if ms.info.networksMap[aContainer.NetworkUUID].Name != ms.info.selfNetwork.Name {
 							continue
@@ -234,6 +237,9 @@ func (ms *MetadataStore) getLinkedPeersInfo() (map[string]bool, []metadata.Conta
 		linkedFromServices := ms.getLinkedFromServicesToSelf()
 		for _, aService := range linkedFromServices {
 			for _, aContainer := range aService.Containers {
+				if !(aContainer.State == "running" || aContainer.State == "starting") {
+					continue
+				}
 				// Skip containers whose network names don't match self
 				if ms.info.networksMap[aContainer.NetworkUUID].Name != ms.info.selfNetwork.Name {
 					continue
@@ -283,6 +289,10 @@ func (ms *MetadataStore) doInternalRefresh() {
 	}
 
 	for _, c := range ms.info.containers {
+		if !(c.State == "running" || c.State == "starting") {
+			continue
+		}
+
 		// check if the container networkUUID is part of peersNetworks
 		_, isPresentInPeersNetworks := peersNetworks[c.NetworkUUID]
 

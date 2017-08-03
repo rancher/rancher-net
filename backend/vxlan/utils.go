@@ -48,6 +48,9 @@ func getLinkedPeersInfo(allServices []metadata.Service, selfService metadata.Ser
 			} else {
 				for _, aService := range linkedServices {
 					for _, aContainer := range aService.Containers {
+						if !(aContainer.State == "running" || aContainer.State == "starting") {
+							continue
+						}
 						// Skip containers whose network names don't match self
 						if networksMap[aContainer.NetworkUUID].Name != selfNetwork.Name {
 							continue
@@ -64,6 +67,9 @@ func getLinkedPeersInfo(allServices []metadata.Service, selfService metadata.Ser
 		linkedFromServices := getLinkedFromServicesToSelf(selfService, allServices, servicesMapByName)
 		for _, aService := range linkedFromServices {
 			for _, aContainer := range aService.Containers {
+				if !(aContainer.State == "running" || aContainer.State == "starting") {
+					continue
+				}
 				// Skip containers whose network names don't match self
 				if networksMap[aContainer.NetworkUUID].Name != selfNetwork.Name {
 					continue
