@@ -148,15 +148,15 @@ func appMain(ctx *cli.Context) error {
 
 	var overlay backend.Backend
 	if backendToUse == backendNameVxlan {
-		vxlanOverlay, err := vxlan.NewOverlay("")
+		vxlanOverlay, err := vxlan.NewOverlay("", os.Getenv("DOCKER_BRIDGE"))
 		if err != nil {
 			return err
 		}
 		overlay = vxlanOverlay
 		overlay.Start(true, "")
-		go func() {
-			done <- arp.ListenAndServeForVXLAN(vxlanOverlay, "eth0")
-		}()
+		//go func() {
+		//done <- arp.ListenAndServeForVXLAN(vxlanOverlay, "docker0")
+		//}()
 	} else {
 		var db store.Store
 		var err error

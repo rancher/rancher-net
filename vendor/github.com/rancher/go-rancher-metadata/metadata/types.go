@@ -54,6 +54,7 @@ type Container struct {
 	ServiceName              string            `json:"service_name"`
 	ServiceIndex             string            `json:"service_index"`
 	StackName                string            `json:"stack_name"`
+	StackUUID                string            `json:"stack_uuid"`
 	Labels                   map[string]string `json:"labels"`
 	CreateIndex              int               `json:"create_index"`
 	HostUUID                 string            `json:"host_uuid"`
@@ -72,11 +73,13 @@ type Container struct {
 	Links                    map[string]string `json:"links"`
 	System                   bool              `json:"system"`
 	EnvironmentUUID          string            `json:"environment_uuid"`
+	HealthCheck              HealthCheck       `json:"health_check"`
 }
 
 type Network struct {
 	Name                string                 `json:"name"`
 	UUID                string                 `json:"uuid"`
+	EnvironmentUUID     string                 `json:"environment_uuid"`
 	Metadata            map[string]interface{} `json:"metadata"`
 	HostPorts           bool                   `json:"host_ports"`
 	Default             bool                   `json:"is_default"`
@@ -107,6 +110,7 @@ type PortRule struct {
 	Priority    int    `json:"priority"`
 	BackendName string `json:"backend_name"`
 	Selector    string `json:"selector"`
+	Container   string `json:"container"`
 }
 
 type LBConfig struct {

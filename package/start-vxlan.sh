@@ -13,8 +13,8 @@ else
     DEBUG=""
 fi
 
-GATEWAY=$(ip route get 8.8.8.8 | awk '{print $3}')
-iptables -t nat -I POSTROUTING -o vtep1042 -s $GATEWAY -j MASQUERADE
+#GATEWAY=$(ip route get 8.8.8.8 | awk '{print $3}')
+#iptables -t nat -I POSTROUTING -o vtep1042 -s $GATEWAY -j MASQUERADE
 exec rancher-net \
 -i ${LOCAL_IP_WITH_SUBNET} \
 --pid-file ${PIDFILE} \
