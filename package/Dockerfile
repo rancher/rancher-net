@@ -1,6 +1,6 @@
 FROM rancher/agent-base:v0.3.0
 ENV CNI v0.3.0
-ENV RANCHER_CNI_BRIDGE v0.4.0
+ENV RANCHER_CNI_BRIDGE v0.5.0
 ENV RANCHER_CNI_IPAM v0.1.1
 
 ADD strongswan.tar.gz /
