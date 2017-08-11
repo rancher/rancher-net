@@ -21,23 +21,25 @@ import (
 )
 
 const (
-	reqId    = 1234
-	reqIdStr = "1234"
-	pskFile  = "psk.txt"
-	pidFile  = "/var/run/charon.pid"
+	reqId                   = 1234
+	reqIdStr                = "1234"
+	pskFile                 = "psk.txt"
+	pidFile                 = "/var/run/charon.pid"
+	DefaultReplayWindowSize = "1024"
 )
 
 type Overlay struct {
 	sync.Mutex
 
-	keyAttempt  map[string]bool
-	hostAttempt map[string]bool
-	keys        map[string]string
-	hosts       map[string]string
-	templates   Templates
-	db          store.Store
-	psk         string
-	Blacklist   []string
+	keyAttempt       map[string]bool
+	hostAttempt      map[string]bool
+	keys             map[string]string
+	hosts            map[string]string
+	templates        Templates
+	db               store.Store
+	psk              string
+	Blacklist        []string
+	ReplayWindowSize string
 }
 
 func NewOverlay(configDir string, db store.Store) *Overlay {
@@ -435,6 +437,9 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 	if strings.Compare(entry.HostIpAddress, o.db.LocalHostIpAddress()) < 0 {
 		childSAConf.RekeyTime = "8760h"
 	}
+
+	logrus.Debugf("Using ReplayWindowSize: %v", o.ReplayWindowSize)
+	childSAConf.ReplayWindow = o.ReplayWindowSize
 
 	ikeConf := o.templates.NewIkeConf()
 	ikeConf.Proposals = o.filterAlgos(ikeConf.Proposals)
