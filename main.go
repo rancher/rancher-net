@@ -83,6 +83,12 @@ func main() {
 			Usage:  "Use metadata instead of config file",
 			EnvVar: "RANCHER_NET_USE_METADATA",
 		},
+		cli.StringFlag{
+			Name:   "ipsec-replay-window-size",
+			Value:  ipsec.DefaultReplayWindowSize,
+			Usage:  "IPSec Replay Window Size",
+			EnvVar: "IPSEC_REPLAY_WINDOW_SIZE",
+		},
 	}
 	app.Action = func(ctx *cli.Context) {
 		if err := appMain(ctx); err != nil {
@@ -175,6 +181,7 @@ func appMain(ctx *cli.Context) error {
 
 		db.Reload()
 		ipsecOverlay := ipsec.NewOverlay(ctx.GlobalString("ipsec-config"), db)
+		ipsecOverlay.ReplayWindowSize = ctx.GlobalString("ipsec-replay-window-size")
 		if !ctx.GlobalBool("gcm") {
 			ipsecOverlay.Blacklist = []string{"aes128gcm16"}
 		}
