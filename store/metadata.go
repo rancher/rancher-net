@@ -213,7 +213,7 @@ func (ms *MetadataStore) getLinkedPeersInfo() (map[string]bool, []metadata.Conta
 			linkedServices, ok := ms.info.servicesMapByName[linkedServiceName]
 			logrus.Debugf("linkedServices: %+v", linkedServices)
 			if !ok {
-				logrus.Errorf("Current service is linked to service: %v, but cannot find in servicesMapByName")
+				logrus.Errorf("Current service is linked to service: %v, but cannot find in servicesMapByName", linkedServiceName)
 				continue
 			} else {
 				for _, aService := range linkedServices {

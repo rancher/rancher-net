@@ -114,7 +114,7 @@ func waitForFile(file string) string {
 func appMain(ctx *cli.Context) error {
 	if ctx.GlobalBool("test-charon") {
 		if err := ipsec.Test(); err != nil {
-			log.Fatalf("Failed to talk to charon:", err)
+			log.Fatalf("Failed to talk to charon: %v", err)
 		}
 		os.Exit(0)
 	}
