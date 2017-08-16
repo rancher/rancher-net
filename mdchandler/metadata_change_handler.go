@@ -1,14 +1,22 @@
 package mdchandler
 
 import (
+	"fmt"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher-metadata/metadata"
 	"github.com/rancher/rancher-net/backend"
 )
 
+const (
+	metadataURLTemplate = "http://%v/2015-12-19"
+
+	// DefaultMetadataAddress specifies the default value to use if nothing is specified
+	DefaultMetadataAddress = "169.254.169.250"
+)
+
 var (
 	changeCheckInterval = 2
-	metadataURL         = "http://rancher-metadata.rancher.internal/2015-12-19"
 )
 
 // MetadataChangeHandler listens for version changes of metadata
@@ -20,7 +28,11 @@ type MetadataChangeHandler struct {
 
 // NewMetadataChangeHandler is used to create a OnChange
 // handler for Meatadta
-func NewMetadataChangeHandler(b backend.Backend) *MetadataChangeHandler {
+func NewMetadataChangeHandler(metadataAddress string, b backend.Backend) *MetadataChangeHandler {
+	if metadataAddress == "" {
+		metadataAddress = DefaultMetadataAddress
+	}
+	metadataURL := fmt.Sprintf(metadataURLTemplate, metadataAddress)
 	mc, err := metadata.NewClientAndWait(metadataURL)
 	if err != nil {
 		logrus.Errorf("couldn't create metadata client: %v", err)

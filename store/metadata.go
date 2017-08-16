@@ -10,8 +10,11 @@ import (
 )
 
 const (
-	defaultMetadataURL  = "http://rancher-metadata.rancher.internal/2015-12-19"
+	metadataURLTemplate = "http://%v/2015-12-19"
 	defaultSubnetPrefix = "/16"
+
+	// DefaultMetadataAddress specifies the default value to use if nothing is specified
+	DefaultMetadataAddress = "169.254.169.250"
 )
 
 // MetadataStore contains information related to metadata client, etc
@@ -43,13 +46,11 @@ type InfoFromMetadata struct {
 }
 
 // NewMetadataStoreWithClientIP creates, intializes and returns a store for use with a specific Client IP to contact the metadata
-func NewMetadataStoreWithClientIP(userURL, clientIP string) (*MetadataStore, error) {
-	var metadataURL string
-	if userURL != "" {
-		metadataURL = userURL
-	} else {
-		metadataURL = defaultMetadataURL
+func NewMetadataStoreWithClientIP(metadataAddress, clientIP string) (*MetadataStore, error) {
+	if metadataAddress == "" {
+		metadataAddress = DefaultMetadataAddress
 	}
+	metadataURL := fmt.Sprintf(metadataURLTemplate, metadataAddress)
 
 	logrus.Debugf("Creating new MetadataStore, metadataURL: %v, clientIP: %v", metadataURL, clientIP)
 	mc, err := metadata.NewClientWithIPAndWait(metadataURL, clientIP)
@@ -65,13 +66,11 @@ func NewMetadataStoreWithClientIP(userURL, clientIP string) (*MetadataStore, err
 }
 
 // NewMetadataStore creates, intializes and returns a store for use
-func NewMetadataStore(userURL string) (*MetadataStore, error) {
-	var metadataURL string
-	if userURL != "" {
-		metadataURL = userURL
-	} else {
-		metadataURL = defaultMetadataURL
+func NewMetadataStore(metadataAddress string) (*MetadataStore, error) {
+	if metadataAddress == "" {
+		metadataAddress = DefaultMetadataAddress
 	}
+	metadataURL := fmt.Sprintf(metadataURLTemplate, metadataAddress)
 
 	logrus.Debugf("Creating new MetadataStore, metadataURL: %v", metadataURL)
 	mc, err := metadata.NewClientAndWait(metadataURL)

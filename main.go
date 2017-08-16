@@ -24,10 +24,11 @@ var (
 )
 
 const (
-	backendFlag      = "backend"
-	backendNameIpsec = "ipsec"
-	backendNameVxlan = "vxlan"
-	metadataFlag     = "use-metadata"
+	backendFlag         = "backend"
+	backendNameIpsec    = "ipsec"
+	backendNameVxlan    = "vxlan"
+	metadataFlag        = "use-metadata"
+	metadataAddressFlag = "metadata-address"
 )
 
 func main() {
@@ -77,6 +78,12 @@ func main() {
 			Value:  backendNameIpsec,
 			Usage:  "backend to use: ipsec/vxlan",
 			EnvVar: "RANCHER_NET_BACKEND",
+		},
+		cli.StringFlag{
+			Name:   metadataAddressFlag,
+			Value:  store.DefaultMetadataAddress,
+			Usage:  "metadata address to use",
+			EnvVar: "RANCHER_METADATA_ADDRESS",
 		},
 		cli.BoolFlag{
 			Name:   metadataFlag,
@@ -168,7 +175,7 @@ func appMain(ctx *cli.Context) error {
 		var err error
 		if useMetadata {
 			logrus.Infof("Reading info from metadata")
-			db, err = store.NewMetadataStore("")
+			db, err = store.NewMetadataStore(ctx.GlobalString(metadataAddressFlag))
 			if err != nil {
 				logrus.Errorf("Error creating metadata store: %v", err)
 				return err
@@ -209,7 +216,7 @@ func appMain(ctx *cli.Context) error {
 
 	if useMetadata && backendToUse == backendNameIpsec {
 		go func() {
-			mdch := mdchandler.NewMetadataChangeHandler(overlay)
+			mdch := mdchandler.NewMetadataChangeHandler(ctx.GlobalString(metadataAddressFlag), overlay)
 			done <- mdch.Start()
 		}()
 	}
