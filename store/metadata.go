@@ -86,14 +86,14 @@ func NewMetadataStore(userURL string) (*MetadataStore, error) {
 	return ms, nil
 }
 
-// LocalHostIpAddress returns the IP address of the host where the agent is running
-func (ms *MetadataStore) LocalHostIpAddress() string {
-	return ms.self.HostIpAddress
+// LocalHostIPAddress returns the IP address of the host where the agent is running
+func (ms *MetadataStore) LocalHostIPAddress() string {
+	return ms.self.HostIPAddress
 }
 
-// LocalIpAddress returns the IP address of the current agent
-func (ms *MetadataStore) LocalIpAddress() string {
-	ip, _, err := net.ParseCIDR(ms.self.IpAddress)
+// LocalIPAddress returns the IP address of the current agent
+func (ms *MetadataStore) LocalIPAddress() string {
+	ip, _, err := net.ParseCIDR(ms.self.IPAddress)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
 		return ""
@@ -284,7 +284,7 @@ func (ms *MetadataStore) doInternalRefresh() {
 	for _, sc := range allPeersContainers {
 		e, _ := ms.getEntryFromContainer(sc)
 		e.Peer = true
-		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
+		ipNoCidr := strings.Split(e.IPAddress, "/")[0]
 		peersMap[ipNoCidr] = e
 	}
 
@@ -305,7 +305,7 @@ func (ms *MetadataStore) doInternalRefresh() {
 		logrus.Debugf("Getting Entry from Container: %+v", c)
 		e, _ := ms.getEntryFromContainer(c)
 
-		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
+		ipNoCidr := strings.Split(e.IPAddress, "/")[0]
 
 		if seen[ipNoCidr] {
 			continue
@@ -316,7 +316,7 @@ func (ms *MetadataStore) doInternalRefresh() {
 			e.Peer = true
 		}
 
-		if e.HostIpAddress == ms.self.HostIpAddress {
+		if e.HostIPAddress == ms.self.HostIPAddress {
 			local[ipNoCidr] = e
 		} else {
 			remote[ipNoCidr] = e

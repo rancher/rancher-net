@@ -189,11 +189,11 @@ func (o *Overlay) configure() error {
 			logrus.Errorf("Failed to ParseMAC in peersContainers: %v", err)
 			continue
 		}
-		hostIpAddress := hostsMap[c.HostUUID].AgentIP
+		hostIPAddress := hostsMap[c.HostUUID].AgentIP
 
 		routesMap[ip.To4().String()] = ipnet
 		arpMap[ip.To4().String()] = peerMAC
-		fdbMap[hostIpAddress] = peerMAC
+		fdbMap[hostIPAddress] = peerMAC
 
 		peersHostMap[c.HostUUID] = ip.To4().String()
 	}
@@ -221,13 +221,13 @@ func (o *Overlay) configure() error {
 			logrus.Errorf("Failed to parseCIDR in nonPeersContainers: %v", err)
 			continue
 		}
-		peerIpAddress, ok := peersHostMap[c.HostUUID]
-		if !ok || c.PrimaryIp == peerIpAddress {
+		peerIPAddress, ok := peersHostMap[c.HostUUID]
+		if !ok || c.PrimaryIp == peerIPAddress {
 			// skip peer containers
 			continue
 		}
-		peerIp := net.ParseIP(peersHostMap[c.HostUUID])
-		peerMAC, err := getMACAddressForVxlanIP(vxlanMACRange, peerIp)
+		peerIP := net.ParseIP(peersHostMap[c.HostUUID])
+		peerMAC, err := getMACAddressForVxlanIP(vxlanMACRange, peerIP)
 		if err != nil {
 			logrus.Errorf("Failed to ParseMAC in nonPeersContainers: %v", err)
 			continue
@@ -353,6 +353,7 @@ func (o *Overlay) checkAndDeleteVTEP() error {
 	return nil
 }
 
+// IsRemote is used to check if the given IP address is remote to the current host
 func (o *Overlay) IsRemote(ipAddress string) bool {
 	if _, ok := o.local[ipAddress]; ok {
 		logrus.Debugf("Local: %s", ipAddress)
