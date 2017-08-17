@@ -1,7 +1,7 @@
 FROM rancher/agent-base:v0.3.0
 ENV CNI v0.3.0
-ENV RANCHER_CNI_BRIDGE v0.5.0
-ENV RANCHER_CNI_IPAM v0.1.1
+ENV RANCHER_CNI_BRIDGE v0.6.0
+ENV RANCHER_CNI_IPAM v0.1.2
 
 ADD strongswan.tar.gz /
 RUN mkdir -p /opt/cni/bin /etc/cni/net.d  /usr/local/etc/strongswan.d \

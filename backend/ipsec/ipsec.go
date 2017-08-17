@@ -28,21 +28,29 @@ const (
 
 	// DefaultReplayWindowSize specifies the replay window size for charon
 	DefaultReplayWindowSize = "1024"
+
+	// DefaultIkeSaRekeyInterval specifies the default rekey interval for IKE_SA
+	DefaultIkeSaRekeyInterval = "4h"
+
+	// DefaultChildSaRekeyInterval specifies the default rekey interval for CHILD_SA
+	DefaultChildSaRekeyInterval = "1h"
 )
 
 // Overlay is used to store information about the Overlay Network
 type Overlay struct {
 	sync.Mutex
 
-	keyAttempt       map[string]bool
-	hostAttempt      map[string]bool
-	keys             map[string]string
-	hosts            map[string]string
-	templates        Templates
-	db               store.Store
-	psk              string
-	Blacklist        []string
-	ReplayWindowSize string
+	keyAttempt                map[string]bool
+	hostAttempt               map[string]bool
+	keys                      map[string]string
+	hosts                     map[string]string
+	templates                 Templates
+	db                        store.Store
+	psk                       string
+	Blacklist                 []string
+	ReplayWindowSize          string
+	IPSecIkeSaRekeyInterval   string
+	IPSecChildSaRekeyInterval string
 }
 
 // NewOverlay creates a new Overlay
@@ -441,9 +449,12 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 	childSAConf := o.templates.NewChildSaConf()
 	childSAConf.ESPProposals = o.filterAlgos(childSAConf.ESPProposals)
 	childSAConf.ReqID = reqIDStr
+	childSAConf.RekeyTime = o.IPSecChildSaRekeyInterval
 	if strings.Compare(entry.HostIPAddress, o.db.LocalHostIPAddress()) < 0 {
 		childSAConf.RekeyTime = "8760h"
+		childSAConf.StartAction = "none"
 	}
+	logrus.Infof("For entry: %v, using RekeyTime: %v", entry, childSAConf.RekeyTime)
 
 	logrus.Debugf("Using ReplayWindowSize: %v", o.ReplayWindowSize)
 	childSAConf.ReplayWindow = o.ReplayWindowSize
@@ -451,6 +462,10 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 	ikeConf := o.templates.NewIkeConf()
 	ikeConf.Proposals = o.filterAlgos(ikeConf.Proposals)
 	ikeConf.RemoteAddrs = []string{entry.HostIPAddress}
+	ikeConf.RekeyTime = o.IPSecIkeSaRekeyInterval
+	if strings.Compare(entry.HostIPAddress, o.db.LocalHostIPAddress()) < 0 {
+		ikeConf.RekeyTime = "8760h"
+	}
 	ikeConf.Children = map[string]goStrongswanVici.ChildSAConf{
 		"child-" + entry.HostIPAddress: childSAConf,
 	}

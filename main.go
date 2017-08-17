@@ -85,6 +85,18 @@ func main() {
 			Usage:  "metadata address to use",
 			EnvVar: "RANCHER_METADATA_ADDRESS",
 		},
+		cli.StringFlag{
+			Name:   "ipsec-ike-sa-rekey-interval",
+			Value:  ipsec.DefaultIkeSaRekeyInterval,
+			Usage:  "IKE_SA rekey interval time",
+			EnvVar: "IPSEC_IKE_SA_REKEY_INTERVAL",
+		},
+		cli.StringFlag{
+			Name:   "ipsec-child-sa-rekey-interval",
+			Value:  ipsec.DefaultChildSaRekeyInterval,
+			Usage:  "CHILD_SA rekey interval time",
+			EnvVar: "IPSEC_CHILD_SA_REKEY_INTERVAL",
+		},
 		cli.BoolFlag{
 			Name:   metadataFlag,
 			Usage:  "Use metadata instead of config file",
@@ -189,6 +201,8 @@ func appMain(ctx *cli.Context) error {
 		db.Reload()
 		ipsecOverlay := ipsec.NewOverlay(ctx.GlobalString("ipsec-config"), db)
 		ipsecOverlay.ReplayWindowSize = ctx.GlobalString("ipsec-replay-window-size")
+		ipsecOverlay.IPSecIkeSaRekeyInterval = ctx.GlobalString("ipsec-ike-sa-rekey-interval")
+		ipsecOverlay.IPSecChildSaRekeyInterval = ctx.GlobalString("ipsec-child-sa-rekey-interval")
 		if !ctx.GlobalBool("gcm") {
 			ipsecOverlay.Blacklist = []string{"aes128gcm16"}
 		}
