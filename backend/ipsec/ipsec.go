@@ -21,13 +21,16 @@ import (
 )
 
 const (
-	reqId                   = 1234
-	reqIdStr                = "1234"
-	pskFile                 = "psk.txt"
-	pidFile                 = "/var/run/charon.pid"
+	reqID    = 1234
+	reqIDStr = "1234"
+	pskFile  = "psk.txt"
+	pidFile  = "/var/run/charon.pid"
+
+	// DefaultReplayWindowSize specifies the replay window size for charon
 	DefaultReplayWindowSize = "1024"
 )
 
+// Overlay is used to store information about the Overlay Network
 type Overlay struct {
 	sync.Mutex
 
@@ -42,6 +45,7 @@ type Overlay struct {
 	ReplayWindowSize string
 }
 
+// NewOverlay creates a new Overlay
 func NewOverlay(configDir string, db store.Store) *Overlay {
 	return &Overlay{
 		db: db,
@@ -53,6 +57,7 @@ func NewOverlay(configDir string, db store.Store) *Overlay {
 	}
 }
 
+// Start begins/starts the overlay network
 func (o *Overlay) Start(launch bool, logFile string) {
 	if launch {
 		go runCharon(logFile)
@@ -66,6 +71,7 @@ func (o *Overlay) Start(launch bool, logFile string) {
 
 }
 
+// Test ...
 func Test() error {
 	client, err := getClient()
 	if err != nil {
@@ -109,6 +115,7 @@ func (o *Overlay) loadConns() error {
 	return nil
 }
 
+// Reload is used to refresh the state of the overlay network
 func (o *Overlay) Reload() error {
 	if err := o.db.Reload(); err != nil {
 		return err
@@ -204,7 +211,7 @@ func (o *Overlay) configure() error {
 	o.hostAttempt = map[string]bool{}
 
 	var firstErr error
-	localHostIp := o.db.LocalHostIpAddress()
+	localHostIP := o.db.LocalHostIPAddress()
 	hosts := map[string]bool{}
 
 	policiesToAdd := map[string]netlink.XfrmPolicy{}
@@ -219,24 +226,24 @@ func (o *Overlay) configure() error {
 
 	for _, entry := range o.db.Entries() {
 		if entry.Peer {
-			if err := o.loadSharedKey(entry.IpAddress); err != nil {
-				firstErr = handleErr(firstErr, err, "Failed to set PSK for peer agent %s: %v", entry.IpAddress, err)
+			if err := o.loadSharedKey(entry.IPAddress); err != nil {
+				firstErr = handleErr(firstErr, err, "Failed to set PSK for peer agent %s: %v", entry.IPAddress, err)
 			}
 		}
 
-		if localHostIp == entry.HostIpAddress {
+		if localHostIP == entry.HostIPAddress {
 			continue
 		}
-		if !hosts[entry.HostIpAddress] {
+		if !hosts[entry.HostIPAddress] {
 			if err := o.addHost(entry); err == nil {
-				hosts[entry.HostIpAddress] = true
+				hosts[entry.HostIPAddress] = true
 			} else {
-				firstErr = handleErr(firstErr, err, "Failed to setup host %s: %v", entry.HostIpAddress, err)
+				firstErr = handleErr(firstErr, err, "Failed to setup host %s: %v", entry.HostIPAddress, err)
 			}
 		}
 
 		if err := o.addRules(entry, existingPolicies, policiesToAdd); err != nil {
-			firstErr = handleErr(firstErr, err, "Failed to add rules for host %s, ip %s : %v", entry.HostIpAddress, entry.IpAddress, err)
+			firstErr = handleErr(firstErr, err, "Failed to add rules for host %s, ip %s : %v", entry.HostIPAddress, entry.IPAddress, err)
 		}
 	}
 
@@ -313,7 +320,7 @@ func (o *Overlay) getRules() (map[string]netlink.XfrmPolicy, error) {
 func (o *Overlay) removeHosts() error {
 	var firstErr error
 
-	for k, _ := range o.hosts {
+	for k := range o.hosts {
 		if !o.hostAttempt[k] {
 			if err := o.removeHost(k); err != nil {
 				firstErr = handleErr(firstErr, err, "Failed to add remove connection for host %s: %v", k, err)
@@ -360,7 +367,7 @@ func getClient() (*goStrongswanVici.ClientConn, error) {
 }
 
 func (o *Overlay) addHost(entry store.Entry) error {
-	if err := o.loadSharedKey(entry.HostIpAddress); err != nil {
+	if err := o.loadSharedKey(entry.HostIPAddress); err != nil {
 		return err
 	}
 
@@ -419,9 +426,9 @@ func (o *Overlay) filterAlgos(algos []string) []string {
 }
 
 func (o *Overlay) addHostConnection(entry store.Entry) error {
-	o.hostAttempt[entry.HostIpAddress] = true
-	if o.hosts[entry.HostIpAddress] == o.templates.Revision() {
-		logrus.Debugf("Connection already loaded for host %s", entry.HostIpAddress)
+	o.hostAttempt[entry.HostIPAddress] = true
+	if o.hosts[entry.HostIPAddress] == o.templates.Revision() {
+		logrus.Debugf("Connection already loaded for host %s", entry.HostIPAddress)
 		return nil
 	}
 
@@ -433,8 +440,8 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 
 	childSAConf := o.templates.NewChildSaConf()
 	childSAConf.ESPProposals = o.filterAlgos(childSAConf.ESPProposals)
-	childSAConf.ReqID = reqIdStr
-	if strings.Compare(entry.HostIpAddress, o.db.LocalHostIpAddress()) < 0 {
+	childSAConf.ReqID = reqIDStr
+	if strings.Compare(entry.HostIPAddress, o.db.LocalHostIPAddress()) < 0 {
 		childSAConf.RekeyTime = "8760h"
 	}
 
@@ -443,12 +450,12 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 
 	ikeConf := o.templates.NewIkeConf()
 	ikeConf.Proposals = o.filterAlgos(ikeConf.Proposals)
-	ikeConf.RemoteAddrs = []string{entry.HostIpAddress}
+	ikeConf.RemoteAddrs = []string{entry.HostIPAddress}
 	ikeConf.Children = map[string]goStrongswanVici.ChildSAConf{
-		"child-" + entry.HostIpAddress: childSAConf,
+		"child-" + entry.HostIPAddress: childSAConf,
 	}
 
-	name := fmt.Sprintf("conn-%s", entry.HostIpAddress)
+	name := fmt.Sprintf("conn-%s", entry.HostIPAddress)
 	// Loading connections doesn't seem to be very reliable, can't get info
 	// why it's failing though.
 	for i := 0; i < 3; i++ {
@@ -464,7 +471,7 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 		return err
 	}
 
-	o.hosts[entry.HostIpAddress] = o.templates.Revision()
+	o.hosts[entry.HostIPAddress] = o.templates.Revision()
 	logrus.Infof("Loaded connection: %v, %v, %v", name, ikeConf.Proposals, childSAConf.ESPProposals)
 
 	return nil
@@ -494,10 +501,10 @@ func toKey(p *netlink.XfrmPolicy) string {
 }
 
 func (o *Overlay) addRules(entry store.Entry, existingPolicies map[string]netlink.XfrmPolicy, policiesToAdd map[string]netlink.XfrmPolicy) error {
-	localIp := net.ParseIP(o.db.LocalIpAddress())
-	remoteHostIp := net.ParseIP(entry.HostIpAddress)
+	localIP := net.ParseIP(o.db.LocalIPAddress())
+	remoteHostIP := net.ParseIP(entry.HostIPAddress)
 
-	ip, ipNet, err := net.ParseCIDR(entry.IpAddress)
+	ip, ipNet, err := net.ParseCIDR(entry.IPAddress)
 	if err != nil {
 		return err
 	}
@@ -514,11 +521,11 @@ func (o *Overlay) addRules(entry store.Entry, existingPolicies map[string]netlin
 		Priority: 10000,
 		Tmpls: []netlink.XfrmPolicyTmpl{
 			{
-				Src:   localIp,
-				Dst:   remoteHostIp,
+				Src:   localIP,
+				Dst:   remoteHostIP,
 				Proto: netlink.XFRM_PROTO_ESP,
 				Mode:  netlink.XFRM_MODE_TUNNEL,
-				Reqid: reqId,
+				Reqid: reqID,
 			},
 		},
 	}
@@ -529,11 +536,11 @@ func (o *Overlay) addRules(entry store.Entry, existingPolicies map[string]netlin
 		Priority: 10000,
 		Tmpls: []netlink.XfrmPolicyTmpl{
 			{
-				Src:   remoteHostIp,
-				Dst:   localIp,
+				Src:   remoteHostIP,
+				Dst:   localIP,
 				Proto: netlink.XFRM_PROTO_ESP,
 				Mode:  netlink.XFRM_MODE_TUNNEL,
-				Reqid: reqId,
+				Reqid: reqID,
 			},
 		},
 	}
@@ -544,11 +551,11 @@ func (o *Overlay) addRules(entry store.Entry, existingPolicies map[string]netlin
 		Priority: 10000,
 		Tmpls: []netlink.XfrmPolicyTmpl{
 			{
-				Src:   remoteHostIp,
-				Dst:   localIp,
+				Src:   remoteHostIP,
+				Dst:   localIP,
 				Proto: netlink.XFRM_PROTO_ESP,
 				Mode:  netlink.XFRM_MODE_TUNNEL,
-				Reqid: reqId,
+				Reqid: reqID,
 			},
 		},
 	}
@@ -566,6 +573,6 @@ func (o *Overlay) addRules(entry store.Entry, existingPolicies map[string]netlin
 	return lastErr
 }
 
-func (o *Overlay) getPsk(hostIp string) string {
+func (o *Overlay) getPsk(hostIP string) string {
 	return o.psk
 }

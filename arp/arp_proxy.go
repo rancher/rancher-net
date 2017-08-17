@@ -11,6 +11,7 @@ import (
 	"github.com/rancher/rancher-net/store"
 )
 
+// ListenAndServe starts ARP proxy server
 func ListenAndServe(db store.Store, ifaceName string) error {
 	listenIface, err := net.InterfaceByName(ifaceName)
 	if err != nil {
@@ -35,10 +36,10 @@ func ListenAndServe(db store.Store, ifaceName string) error {
 			continue
 		}
 
-		targetIp := arpRequest.TargetIP.String()
-		logrus.Debugf("Arp request for %s", targetIp)
-		if db.IsRemote(targetIp) {
-			logrus.Debugf("Sending arp reply for %s", targetIp)
+		targetIP := arpRequest.TargetIP.String()
+		logrus.Debugf("Arp request for %s", targetIP)
+		if db.IsRemote(targetIP) {
+			logrus.Debugf("Sending arp reply for %s", targetIP)
 			if err := client.Reply(arpRequest, listenIface.HardwareAddr, arpRequest.TargetIP); err != nil {
 				return err
 			}
@@ -46,6 +47,7 @@ func ListenAndServe(db store.Store, ifaceName string) error {
 	}
 }
 
+// ListenAndServeForVXLAN starts ARP proxy server for VXLAN
 func ListenAndServeForVXLAN(o *vxlan.Overlay, ifaceName string) error {
 	listenIface, err := net.InterfaceByName(ifaceName)
 	if err != nil {
@@ -70,10 +72,10 @@ func ListenAndServeForVXLAN(o *vxlan.Overlay, ifaceName string) error {
 			continue
 		}
 
-		targetIp := arpRequest.TargetIP.String()
-		logrus.Debugf("Arp request for %s", targetIp)
-		if o.IsRemote(targetIp) {
-			logrus.Debugf("Sending arp reply for %s", targetIp)
+		targetIP := arpRequest.TargetIP.String()
+		logrus.Debugf("Arp request for %s", targetIP)
+		if o.IsRemote(targetIP) {
+			logrus.Debugf("Sending arp reply for %s", targetIP)
 			client.Reply(arpRequest, listenIface.HardwareAddr, arpRequest.TargetIP)
 		}
 	}

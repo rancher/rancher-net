@@ -11,6 +11,7 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
+// Simple ...
 type Simple struct {
 	sync.Mutex
 
@@ -20,9 +21,10 @@ type Simple struct {
 	config Config
 }
 
+// Config ...
 type Config struct {
-	hostIp            string
-	cidrIp            net.IP
+	hostIP            string
+	cidrIP            net.IP
 	cidrNetwork       *net.IPNet
 	local             map[string]Entry
 	remote            map[string]Entry
@@ -31,14 +33,16 @@ type Config struct {
 	remoteNonPeersMap map[string]Entry
 }
 
+// Records ...
 type Records struct {
 	Entries []Entry `json:"entries"`
 }
 
-func NewSimpleStore(file, localIp string) *Simple {
+// NewSimpleStore ...
+func NewSimpleStore(file, localIP string) *Simple {
 	s := &Simple{
 		file:       file,
-		ipOverride: localIp,
+		ipOverride: localIP,
 	}
 	return s
 }
@@ -57,6 +61,7 @@ func (s *Simple) readFile() ([]Entry, error) {
 	return records.Entries, nil
 }
 
+// Reload ...
 func (s *Simple) Reload() error {
 	entries, err := s.readFile()
 	if err != nil {
@@ -72,7 +77,7 @@ func (s *Simple) Reload() error {
 	for i, entry := range entries {
 		if entry.Self {
 			if s.ipOverride != "" {
-				entries[i].IpAddress = s.ipOverride
+				entries[i].IPAddress = s.ipOverride
 			}
 			self = &entry
 			break
@@ -85,7 +90,7 @@ func (s *Simple) Reload() error {
 
 	logrus.Debugf("self: %v", self)
 
-	ip, ipNet, err := net.ParseCIDR(self.IpAddress)
+	ip, ipNet, err := net.ParseCIDR(self.IPAddress)
 	if err != nil {
 		return err
 	}
@@ -95,13 +100,13 @@ func (s *Simple) Reload() error {
 	remoteNonPeersMap := map[string]Entry{}
 
 	for _, entry := range entries {
-		if entry.IpAddress == "" {
+		if entry.IPAddress == "" {
 			continue
 		}
 
-		ipNoCidr := strings.Split(entry.IpAddress, "/")[0]
+		ipNoCidr := strings.Split(entry.IPAddress, "/")[0]
 
-		if entry.HostIpAddress == self.HostIpAddress {
+		if entry.HostIPAddress == self.HostIPAddress {
 			local[ipNoCidr] = entry
 		} else {
 			remote[ipNoCidr] = entry
@@ -128,8 +133,8 @@ func (s *Simple) Reload() error {
 	s.Lock()
 	defer s.Unlock()
 	s.config = Config{
-		hostIp:            self.HostIpAddress,
-		cidrIp:            ip,
+		hostIP:            self.HostIPAddress,
+		cidrIP:            ip,
 		cidrNetwork:       ipNet,
 		local:             local,
 		remote:            remote,
@@ -149,34 +154,41 @@ func (s *Simple) getConfig() Config {
 	return s.config
 }
 
+// PeerEntriesMap ...
 func (s *Simple) PeerEntriesMap() map[string]Entry {
 	s.Lock()
 	defer s.Unlock()
 	return s.config.peers
 }
 
+// RemoteNonPeerEntriesMap ...
 func (s *Simple) RemoteNonPeerEntriesMap() map[string]Entry {
 	s.Lock()
 	defer s.Unlock()
 	return s.config.remoteNonPeersMap
 }
 
-func (s *Simple) LocalHostIpAddress() string {
-	return s.getConfig().hostIp
+// LocalHostIPAddress ...
+func (s *Simple) LocalHostIPAddress() string {
+	return s.getConfig().hostIP
 }
 
-func (s *Simple) LocalIpAddress() string {
-	return s.getConfig().cidrIp.String()
+// LocalIPAddress ...
+func (s *Simple) LocalIPAddress() string {
+	return s.getConfig().cidrIP.String()
 }
 
+// Entries ...
 func (s *Simple) Entries() []Entry {
 	return s.getConfig().entries
 }
 
+// RemoteEntriesMap ...
 func (s *Simple) RemoteEntriesMap() map[string]Entry {
 	return s.getConfig().remote
 }
 
+// IsRemote ...
 func (s *Simple) IsRemote(ipAddress string) bool {
 	config := s.getConfig()
 

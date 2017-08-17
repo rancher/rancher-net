@@ -10,8 +10,11 @@ import (
 )
 
 const (
-	defaultMetadataURL  = "http://rancher-metadata.rancher.internal/2015-12-19"
+	metadataURLTemplate = "http://%v/2015-12-19"
 	defaultSubnetPrefix = "/16"
+
+	// DefaultMetadataAddress specifies the default value to use if nothing is specified
+	DefaultMetadataAddress = "169.254.169.250"
 )
 
 // MetadataStore contains information related to metadata client, etc
@@ -43,13 +46,11 @@ type InfoFromMetadata struct {
 }
 
 // NewMetadataStoreWithClientIP creates, intializes and returns a store for use with a specific Client IP to contact the metadata
-func NewMetadataStoreWithClientIP(userURL, clientIP string) (*MetadataStore, error) {
-	var metadataURL string
-	if userURL != "" {
-		metadataURL = userURL
-	} else {
-		metadataURL = defaultMetadataURL
+func NewMetadataStoreWithClientIP(metadataAddress, clientIP string) (*MetadataStore, error) {
+	if metadataAddress == "" {
+		metadataAddress = DefaultMetadataAddress
 	}
+	metadataURL := fmt.Sprintf(metadataURLTemplate, metadataAddress)
 
 	logrus.Debugf("Creating new MetadataStore, metadataURL: %v, clientIP: %v", metadataURL, clientIP)
 	mc, err := metadata.NewClientWithIPAndWait(metadataURL, clientIP)
@@ -65,13 +66,11 @@ func NewMetadataStoreWithClientIP(userURL, clientIP string) (*MetadataStore, err
 }
 
 // NewMetadataStore creates, intializes and returns a store for use
-func NewMetadataStore(userURL string) (*MetadataStore, error) {
-	var metadataURL string
-	if userURL != "" {
-		metadataURL = userURL
-	} else {
-		metadataURL = defaultMetadataURL
+func NewMetadataStore(metadataAddress string) (*MetadataStore, error) {
+	if metadataAddress == "" {
+		metadataAddress = DefaultMetadataAddress
 	}
+	metadataURL := fmt.Sprintf(metadataURLTemplate, metadataAddress)
 
 	logrus.Debugf("Creating new MetadataStore, metadataURL: %v", metadataURL)
 	mc, err := metadata.NewClientAndWait(metadataURL)
@@ -86,14 +85,14 @@ func NewMetadataStore(userURL string) (*MetadataStore, error) {
 	return ms, nil
 }
 
-// LocalHostIpAddress returns the IP address of the host where the agent is running
-func (ms *MetadataStore) LocalHostIpAddress() string {
-	return ms.self.HostIpAddress
+// LocalHostIPAddress returns the IP address of the host where the agent is running
+func (ms *MetadataStore) LocalHostIPAddress() string {
+	return ms.self.HostIPAddress
 }
 
-// LocalIpAddress returns the IP address of the current agent
-func (ms *MetadataStore) LocalIpAddress() string {
-	ip, _, err := net.ParseCIDR(ms.self.IpAddress)
+// LocalIPAddress returns the IP address of the current agent
+func (ms *MetadataStore) LocalIPAddress() string {
+	ip, _, err := net.ParseCIDR(ms.self.IPAddress)
 	if err != nil {
 		logrus.Errorf("error: %v", err)
 		return ""
@@ -213,7 +212,7 @@ func (ms *MetadataStore) getLinkedPeersInfo() (map[string]bool, []metadata.Conta
 			linkedServices, ok := ms.info.servicesMapByName[linkedServiceName]
 			logrus.Debugf("linkedServices: %+v", linkedServices)
 			if !ok {
-				logrus.Errorf("Current service is linked to service: %v, but cannot find in servicesMapByName")
+				logrus.Errorf("Current service is linked to service: %v, but cannot find in servicesMapByName", linkedServiceName)
 				continue
 			} else {
 				for _, aService := range linkedServices {
@@ -284,7 +283,7 @@ func (ms *MetadataStore) doInternalRefresh() {
 	for _, sc := range allPeersContainers {
 		e, _ := ms.getEntryFromContainer(sc)
 		e.Peer = true
-		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
+		ipNoCidr := strings.Split(e.IPAddress, "/")[0]
 		peersMap[ipNoCidr] = e
 	}
 
@@ -305,7 +304,7 @@ func (ms *MetadataStore) doInternalRefresh() {
 		logrus.Debugf("Getting Entry from Container: %+v", c)
 		e, _ := ms.getEntryFromContainer(c)
 
-		ipNoCidr := strings.Split(e.IpAddress, "/")[0]
+		ipNoCidr := strings.Split(e.IPAddress, "/")[0]
 
 		if seen[ipNoCidr] {
 			continue
@@ -316,7 +315,7 @@ func (ms *MetadataStore) doInternalRefresh() {
 			e.Peer = true
 		}
 
-		if e.HostIpAddress == ms.self.HostIpAddress {
+		if e.HostIPAddress == ms.self.HostIPAddress {
 			local[ipNoCidr] = e
 		} else {
 			remote[ipNoCidr] = e

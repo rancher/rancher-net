@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"sync"
 
 	"github.com/Sirupsen/logrus"
@@ -13,7 +14,7 @@ import (
 
 const (
 	changeCheckInterval = 5
-	metadataURL         = "http://rancher-metadata/2015-12-19"
+	metadataURLTemplate = "http://%v/2015-12-19"
 	ipLabel             = "io.rancher.container.ip"
 
 	vxlanInterfaceName = "vtep1042"
@@ -24,6 +25,9 @@ const (
 	//vxlanPort          = 46354 //There is a bug in netlink library 46354 ~ swapped 4789
 
 	emptyIPAddress = ""
+
+	// DefaultMetadataAddress specifies the default value to use if nothing is specified
+	DefaultMetadataAddress = "169.254.169.250"
 )
 
 // Overlay is used to store the VXLAN overlay information
@@ -38,6 +42,12 @@ type Overlay struct {
 
 // NewOverlay is used to create a new VXLAN Overlay network
 func NewOverlay(configDir string) (*Overlay, error) {
+	metadataAddress := os.Getenv("RANCHER_METADATA_ADDRESS")
+	if metadataAddress == "" {
+		metadataAddress = DefaultMetadataAddress
+	}
+	metadataURL := fmt.Sprintf(metadataURLTemplate, metadataAddress)
+
 	logrus.Debugf("Creating new VXLAN Overlay, metadataURL: %v", metadataURL)
 	m, err := metadata.NewClientAndWait(metadataURL)
 	if err != nil {
@@ -189,11 +199,11 @@ func (o *Overlay) configure() error {
 			logrus.Errorf("Failed to ParseMAC in peersContainers: %v", err)
 			continue
 		}
-		hostIpAddress := hostsMap[c.HostUUID].AgentIP
+		hostIPAddress := hostsMap[c.HostUUID].AgentIP
 
 		routesMap[ip.To4().String()] = ipnet
 		arpMap[ip.To4().String()] = peerMAC
-		fdbMap[hostIpAddress] = peerMAC
+		fdbMap[hostIPAddress] = peerMAC
 
 		peersHostMap[c.HostUUID] = ip.To4().String()
 	}
@@ -221,13 +231,13 @@ func (o *Overlay) configure() error {
 			logrus.Errorf("Failed to parseCIDR in nonPeersContainers: %v", err)
 			continue
 		}
-		peerIpAddress, ok := peersHostMap[c.HostUUID]
-		if !ok || c.PrimaryIp == peerIpAddress {
+		peerIPAddress, ok := peersHostMap[c.HostUUID]
+		if !ok || c.PrimaryIp == peerIPAddress {
 			// skip peer containers
 			continue
 		}
-		peerIp := net.ParseIP(peersHostMap[c.HostUUID])
-		peerMAC, err := getMACAddressForVxlanIP(vxlanMACRange, peerIp)
+		peerIP := net.ParseIP(peersHostMap[c.HostUUID])
+		peerMAC, err := getMACAddressForVxlanIP(vxlanMACRange, peerIP)
 		if err != nil {
 			logrus.Errorf("Failed to ParseMAC in nonPeersContainers: %v", err)
 			continue
@@ -353,6 +363,7 @@ func (o *Overlay) checkAndDeleteVTEP() error {
 	return nil
 }
 
+// IsRemote is used to check if the given IP address is remote to the current host
 func (o *Overlay) IsRemote(ipAddress string) bool {
 	if _, ok := o.local[ipAddress]; ok {
 		logrus.Debugf("Local: %s", ipAddress)

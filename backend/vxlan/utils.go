@@ -43,7 +43,7 @@ func getLinkedPeersInfo(allServices []metadata.Service, selfService metadata.Ser
 			linkedServices, ok := servicesMapByName[linkedServiceName]
 			logrus.Debugf("linkedServices: %+v", linkedServices)
 			if !ok {
-				logrus.Errorf("Current service is linked to service: %v, but cannot find in servicesMapByName")
+				logrus.Errorf("Current service is linked to service: %v, but cannot find in servicesMapByName", linkedServiceName)
 				continue
 			} else {
 				for _, aService := range linkedServices {

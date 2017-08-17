@@ -2,16 +2,16 @@ package store
 
 // Entry holds the information for each container
 type Entry struct {
-	IpAddress     string `json:"ip"`
-	HostIpAddress string `json:"hostIp"`
+	IPAddress     string `json:"ip"`
+	HostIPAddress string `json:"hostIp"`
 	Self          bool   `json:"self"`
 	Peer          bool   `json:"peer"`
 }
 
 // Store defines the interface for the data store
 type Store interface {
-	LocalHostIpAddress() string
-	LocalIpAddress() string
+	LocalHostIPAddress() string
+	LocalIPAddress() string
 	IsRemote(ipAddress string) bool
 	Entries() []Entry
 	RemoteEntriesMap() map[string]Entry
