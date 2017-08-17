@@ -452,6 +452,7 @@ func (o *Overlay) addHostConnection(entry store.Entry) error {
 	childSAConf.RekeyTime = o.IPSecChildSaRekeyInterval
 	if strings.Compare(entry.HostIPAddress, o.db.LocalHostIPAddress()) < 0 {
 		childSAConf.RekeyTime = "8760h"
+		childSAConf.StartAction = "none"
 	}
 	logrus.Infof("For entry: %v, using RekeyTime: %v", entry, childSAConf.RekeyTime)
 
