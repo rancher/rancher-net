@@ -108,6 +108,11 @@ func main() {
 			Usage:  "IPSec Replay Window Size",
 			EnvVar: "IPSEC_REPLAY_WINDOW_SIZE",
 		},
+		cli.IntFlag{
+			Name:   "vxlan-vtep-mtu",
+			Value:  vxlan.DefaultVTEPMTU,
+			EnvVar: "VXLAN_VTEP_MTU",
+		},
 	}
 	app.Action = func(ctx *cli.Context) {
 		if err := appMain(ctx); err != nil {
@@ -173,7 +178,7 @@ func appMain(ctx *cli.Context) error {
 
 	var overlay backend.Backend
 	if backendToUse == backendNameVxlan {
-		vxlanOverlay, err := vxlan.NewOverlay("")
+		vxlanOverlay, err := vxlan.NewOverlay(ctx.GlobalInt("vxlan-vtep-mtu"))
 		if err != nil {
 			return err
 		}

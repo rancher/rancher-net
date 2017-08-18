@@ -20,7 +20,6 @@ const (
 	vxlanInterfaceName = "vtep1042"
 	vxlanVni           = 1042
 	vxlanMACRange      = "0E:00:00:00:00:00"
-	vxlanMTU           = 1400
 	vxlanPort          = 4789
 	//vxlanPort          = 46354 //There is a bug in netlink library 46354 ~ swapped 4789
 
@@ -28,6 +27,8 @@ const (
 
 	// DefaultMetadataAddress specifies the default value to use if nothing is specified
 	DefaultMetadataAddress = "169.254.169.250"
+
+	DefaultVTEPMTU = 1500
 )
 
 // Overlay is used to store the VXLAN overlay information
@@ -38,10 +39,12 @@ type Overlay struct {
 
 	local  map[string]bool
 	remote map[string]bool
+
+	vtepMTU int
 }
 
 // NewOverlay is used to create a new VXLAN Overlay network
-func NewOverlay(configDir string) (*Overlay, error) {
+func NewOverlay(vtepMTU int) (*Overlay, error) {
 	metadataAddress := os.Getenv("RANCHER_METADATA_ADDRESS")
 	if metadataAddress == "" {
 		metadataAddress = DefaultMetadataAddress
@@ -56,7 +59,8 @@ func NewOverlay(configDir string) (*Overlay, error) {
 	}
 
 	o := &Overlay{
-		m: m,
+		m:       m,
+		vtepMTU: vtepMTU,
 	}
 
 	o.v, err = o.getDefaultVxlanInterfaceInfo()
@@ -314,7 +318,7 @@ func (o *Overlay) getDefaultVxlanInterfaceInfo() (*vxlanIntfInfo, error) {
 		vni:  vxlanVni,
 		port: vxlanPort,
 		mac:  mac,
-		mtu:  vxlanMTU,
+		mtu:  o.vtepMTU,
 	}, nil
 }
 
