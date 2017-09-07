@@ -1,3 +1,0 @@
- check process charon matching "/usr/local/sbin/charon"
-   start program = "/etc/init.d/charon start"
-   stop  program = "/etc/init.d/charon stop"
