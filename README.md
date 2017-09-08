@@ -45,7 +45,7 @@ This would pick up the ipsec binaries from the private `dev` release and package
 
 ## Running
 
-`./bin/rancher-net`
+Different Networking catalog items are built using `rancher/net` docker image and one of them can be selected here: https://github.com/rancher/rancher-catalog
 
 ## License
 Copyright (c) 2014-2017 [Rancher Labs, Inc.](http://rancher.com)
