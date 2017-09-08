@@ -15,9 +15,6 @@ if $(echo ${TAG} | grep -q dirty); then
     TAG=dev
 fi
 
-cp ../bin/rancher-net .
-cp ../strongswan/* strongswan.tar.gz
-
 IMAGE=${REPO}/net:${TAG}
 docker build -t ${IMAGE} .
 echo ${IMAGE} > ../dist/images
