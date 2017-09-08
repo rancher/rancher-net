@@ -1,10 +1,8 @@
 /bin
 /dist
-/strongswan
 /.trash-cache
 /.dapper
-*strongswan.tar.gz
-/rancher-net
-/package/rancher-net
 /trash
 /build
+/downloads
+.DS_Store

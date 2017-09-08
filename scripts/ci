@@ -2,8 +2,5 @@
 set -e
 
 cd $(dirname $0)
-./build
-./test
-./validate
 ./download
 ./package

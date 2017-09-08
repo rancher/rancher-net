@@ -3,12 +3,73 @@ set -e
 
 cd $(dirname $0)/..
 
-VERSION=v5.5.1-rancher-1-1
-HASH=dd6dda8081921ac9a91345b1e088787d14a37d0c
+# Repos
+RANCHER_IPSEC_REPO="${RANCHER_IPSEC_REPO:-rancher}"
+RANCHER_VXLAN_REPO="${RANCHER_VXLAN_REPO:-rancher}"
+RANCHER_CNI_BRIDGE_REPO="${RANCHER_CNI_BRIDGE_REPO:-rancher}"
+RANCHER_CNI_IPAM_REPO="${RANCHER_CNI_IPAM_REPO:-rancher}"
 
-if [ "$(sha1sum -b strongswan/strongswan-${VERSION}.tar.gz 2>/dev/null | awk '{print $1}')" != "$HASH" ]; then
-    mkdir -p strongswan
-    echo Downloading strongswan-${VERSION}.tar.gz
-    curl -sLf https://github.com/rancher/strongswan-package/releases/download/${VERSION}/strongswan-${VERSION}.tar.gz > strongswan/strongswan-${VERSION}.tar.gz
-    [ "$(sha1sum -b strongswan/strongswan-${VERSION}.tar.gz | awk '{print $1}')" == "$HASH" ]
+# Tags
+RANCHER_IPSEC_TAG="${RANCHER_IPSEC_TAG:-v0.1.1}"
+RANCHER_VXLAN_TAG="${RANCHER_VXLAN_TAG:-v0.1.2}"
+RANCHER_CNI_BRIDGE_TAG="${RANCHER_CNI_BRIDGE_TAG:-v0.6.1}"
+RANCHER_CNI_IPAM_TAG="${RANCHER_CNI_IPAM_TAG:-v0.1.2}"
+
+
+mkdir -p downloads
+
+# rancher-ipsec
+echo "rancher-ipsec: REPO=${RANCHER_IPSEC_REPO} TAG=${RANCHER_IPSEC_TAG}"
+
+if [ ! -f downloads/rancher-ipsec-amd64-${RANCHER_IPSEC_TAG}.tar.gz ]; then
+    echo "Downloading rancher-ipsec-amd64-${RANCHER_IPSEC_TAG}.tar.gz"
+    curl -sfSL https://github.com/${RANCHER_IPSEC_REPO}/ipsec/releases/download/${RANCHER_IPSEC_TAG}/rancher-ipsec-amd64-${RANCHER_IPSEC_TAG}.tar.gz > downloads/rancher-ipsec-amd64-${RANCHER_IPSEC_TAG}.tar.gz
+else
+    echo "Already downloaded: rancher-ipsec-amd64-${RANCHER_IPSEC_TAG}.tar.gz"
 fi
+
+cmp -s downloads/rancher-ipsec-amd64-${RANCHER_IPSEC_TAG}.tar.gz package/rancher-ipsec.tar.gz \
+    || echo "copying to package/rancher-ipsec.tar.gz"; cp downloads/rancher-ipsec-amd64-${RANCHER_IPSEC_TAG}.tar.gz package/rancher-ipsec.tar.gz
+
+
+# rancher-vxlan
+echo "rancher-vxlan: REPO=${RANCHER_VXLAN_REPO} TAG=${RANCHER_VXLAN_TAG}"
+
+if [ ! -f downloads/rancher-vxlan-amd64-${RANCHER_VXLAN_TAG}.tar.gz ]; then
+    echo "Downloading rancher-vxlan-amd64-${RANCHER_VXLAN_TAG}.tar.gz"
+    curl -sfSL https://github.com/${RANCHER_VXLAN_REPO}/vxlan/releases/download/${RANCHER_VXLAN_TAG}/rancher-vxlan-amd64-${RANCHER_VXLAN_TAG}.tar.gz > downloads/rancher-vxlan-amd64-${RANCHER_VXLAN_TAG}.tar.gz
+else
+    echo "Already downloaded: rancher-vxlan-amd64-${RANCHER_VXLAN_TAG}.tar.gz"
+fi
+
+cmp -s downloads/rancher-vxlan-amd64-${RANCHER_VXLAN_TAG}.tar.gz package/rancher-vxlan.tar.gz \
+    || echo "copying to package/rancher-vxlan.tar.gz"; cp downloads/rancher-vxlan-amd64-${RANCHER_VXLAN_TAG}.tar.gz package/rancher-vxlan.tar.gz
+
+
+# rancher-cni-bridge
+echo "rancher-cni-bridge: REPO=${RANCHER_CNI_BRIDGE_REPO} TAG=${RANCHER_CNI_BRIDGE_TAG}"
+
+if [ ! -f downloads/rancher-cni-bridge-${RANCHER_CNI_BRIDGE_TAG}.tar.gz ]; then
+    echo "Downloading rancher-cni-bridge-${RANCHER_CNI_BRIDGE_TAG}.tar.gz"
+    curl -sfSL https://github.com/${RANCHER_CNI_BRIDGE_REPO}/rancher-cni-bridge/releases/download/${RANCHER_CNI_BRIDGE_TAG}/rancher-cni-bridge-${RANCHER_CNI_BRIDGE_TAG}.tar.gz > downloads/rancher-cni-bridge-${RANCHER_CNI_BRIDGE_TAG}.tar.gz
+else
+    echo "Already downloaded: rancher-cni-bridge-${RANCHER_CNI_BRIDGE_TAG}.tar.gz"
+fi
+
+cmp -s downloads/rancher-cni-bridge-${RANCHER_CNI_BRIDGE_TAG}.tar.gz package/rancher-cni-bridge.tar.gz \
+    || echo "copying to package/rancher-cni-bridge.tar.gz"; cp downloads/rancher-cni-bridge-${RANCHER_CNI_BRIDGE_TAG}.tar.gz package/rancher-cni-bridge.tar.gz
+
+
+# rancher-cni-ipam
+echo "rancher-cni-ipam: REPO=${RANCHER_CNI_IPAM_REPO} TAG=${RANCHER_CNI_IPAM_TAG}"
+
+if [ ! -f downloads/rancher-cni-ipam-${RANCHER_CNI_IPAM_TAG}.tar.gz ]; then
+    echo "Downloading rancher-cni-ipam-${RANCHER_CNI_IPAM_TAG}.tar.gz"
+    curl -sfSL https://github.com/${RANCHER_CNI_IPAM_REPO}/rancher-cni-ipam/releases/download/${RANCHER_CNI_IPAM_TAG}/rancher-cni-ipam-${RANCHER_CNI_IPAM_TAG}.tar.gz > downloads/rancher-cni-ipam-${RANCHER_CNI_IPAM_TAG}.tar.gz
+else
+    echo "Already downloaded: rancher-cni-ipam-${RANCHER_CNI_IPAM_TAG}.tar.gz"
+fi
+
+cmp -s downloads/rancher-cni-ipam-${RANCHER_CNI_IPAM_TAG}.tar.gz package/rancher-cni-ipam.tar.gz \
+    || echo "copying to package/rancher-cni-ipam.tar.gz"; cp downloads/rancher-cni-ipam-${RANCHER_CNI_IPAM_TAG}.tar.gz package/rancher-cni-ipam.tar.gz
+
