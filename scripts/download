@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 set -e
 
 cd $(dirname $0)/..
@@ -8,12 +8,14 @@ RANCHER_IPSEC_REPO="${RANCHER_IPSEC_REPO:-rancher}"
 RANCHER_VXLAN_REPO="${RANCHER_VXLAN_REPO:-rancher}"
 RANCHER_CNI_BRIDGE_REPO="${RANCHER_CNI_BRIDGE_REPO:-rancher}"
 RANCHER_CNI_IPAM_REPO="${RANCHER_CNI_IPAM_REPO:-rancher}"
+RANCHER_CNI_DRIVER_REPO="${RANCHER_CNI_DRIVER_REPO:-rancher}"
 
 # Tags
 RANCHER_IPSEC_TAG="${RANCHER_IPSEC_TAG:-v0.1.2}"
 RANCHER_VXLAN_TAG="${RANCHER_VXLAN_TAG:-v0.1.2}"
 RANCHER_CNI_BRIDGE_TAG="${RANCHER_CNI_BRIDGE_TAG:-v0.6.1}"
 RANCHER_CNI_IPAM_TAG="${RANCHER_CNI_IPAM_TAG:-v0.1.2}"
+RANCHER_CNI_DRIVER_TAG="${RANCHER_CNI_DRIVER_TAG:-v0.1.0}"
 
 
 mkdir -p downloads
@@ -72,4 +74,17 @@ fi
 
 cmp -s downloads/rancher-cni-ipam-${RANCHER_CNI_IPAM_TAG}.tar.gz package/rancher-cni-ipam.tar.gz \
     || echo "copying to package/rancher-cni-ipam.tar.gz"; cp downloads/rancher-cni-ipam-${RANCHER_CNI_IPAM_TAG}.tar.gz package/rancher-cni-ipam.tar.gz
+
+# rancher-cni-driver
+echo "rancher-cni-driver: REPO=${RANCHER_CNI_DRIVER_REPO} TAG=${RANCHER_CNI_DRIVER_TAG}"
+
+if [ ! -f downloads/rancher-cni-driver-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz ]; then
+    echo "Downloading rancher-cni-driver-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz"
+    curl -sfSL https://github.com/${RANCHER_CNI_DRIVER_REPO}/cni-driver/releases/download/${RANCHER_CNI_DRIVER_TAG}/rancher-cni-driver-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz > downloads/rancher-cni-driver-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz
+else
+    echo "Already downloaded: rancher-cni-driver-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz"
+fi
+
+cmp -s downloads/rancher-cni-driver-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz package/rancher-cni-driver.tar.gz \
+    || echo "copying to package/rancher-cni-driver.tar.gz"; cp downloads/rancher-cni-driver-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz package/rancher-cni-driver.tar.gz
 
