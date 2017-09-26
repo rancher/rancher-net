@@ -9,6 +9,7 @@ RANCHER_VXLAN_REPO="${RANCHER_VXLAN_REPO:-rancher}"
 RANCHER_CNI_BRIDGE_REPO="${RANCHER_CNI_BRIDGE_REPO:-rancher}"
 RANCHER_CNI_IPAM_REPO="${RANCHER_CNI_IPAM_REPO:-rancher}"
 RANCHER_CNI_DRIVER_REPO="${RANCHER_CNI_DRIVER_REPO:-rancher}"
+RANCHER_PER_HOST_SUBNET_REPO="${RANCHER_PER_HOST_SUBNET_REPO:-rancher}"
 
 # Tags
 RANCHER_IPSEC_TAG="${RANCHER_IPSEC_TAG:-v0.1.2}"
@@ -16,6 +17,7 @@ RANCHER_VXLAN_TAG="${RANCHER_VXLAN_TAG:-v0.1.2}"
 RANCHER_CNI_BRIDGE_TAG="${RANCHER_CNI_BRIDGE_TAG:-v0.7.1}"
 RANCHER_CNI_IPAM_TAG="${RANCHER_CNI_IPAM_TAG:-v0.2.1}"
 RANCHER_CNI_DRIVER_TAG="${RANCHER_CNI_DRIVER_TAG:-v0.1.0}"
+RANCHER_PER_HOST_SUBNET_TAG="${RANCHER_PER_HOST_SUBNET_TAG:-v0.1.0}"
 
 
 mkdir -p downloads
@@ -88,3 +90,16 @@ fi
 cmp -s downloads/rancher-cni-driver-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz package/rancher-cni-driver.tar.gz \
     || echo "copying to package/rancher-cni-driver.tar.gz"; cp downloads/rancher-cni-driver-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz package/rancher-cni-driver.tar.gz
 
+
+# rancher-per-host-subnet
+echo "rancher-per-host-subnet: REPO=${RANCHER_PER_HOST_SUBNET_REPO} TAG=${RANCHER_PER_HOST_SUBNET_TAG}"
+
+if [ ! -f downloads/rancher-per-host-subnet-amd64-${RANCHER_PER_HOST_SUBNET_TAG}.tar.gz ]; then
+    echo "Downloading rancher-per-host-subnet-amd64-${RANCHER_PER_HOST_SUBNET_TAG}.tar.gz"
+    curl -sfSL https://github.com/${RANCHER_PER_HOST_SUBNET_REPO}/per-host-subnet/releases/download/${RANCHER_PER_HOST_SUBNET_TAG}/rancher-per-host-subnet-amd64-${RANCHER_PER_HOST_SUBNET_TAG}.tar.gz > downloads/rancher-per-host-subnet-amd64-${RANCHER_PER_HOST_SUBNET_TAG}.tar.gz
+else
+    echo "Already downloaded: rancher-per-host-subnet-amd64-${RANCHER_PER_HOST_SUBNET_TAG}.tar.gz"
+fi
+
+cmp -s downloads/rancher-per-host-subnet-amd64-${RANCHER_PER_HOST_SUBNET_TAG}.tar.gz package/rancher-per-host-subnet.tar.gz \
+    || echo "copying to package/rancher-per-host-subnet.tar.gz"; cp downloads/rancher-per-hostsubnet-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz package/rancher-per-host-subnet.tar.gz
