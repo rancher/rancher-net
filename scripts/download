@@ -102,4 +102,4 @@ else
 fi
 
 cmp -s downloads/rancher-per-host-subnet-amd64-${RANCHER_PER_HOST_SUBNET_TAG}.tar.gz package/rancher-per-host-subnet.tar.gz \
-    || echo "copying to package/rancher-per-host-subnet.tar.gz"; cp downloads/rancher-per-hostsubnet-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz package/rancher-per-host-subnet.tar.gz
+    || echo "copying to package/rancher-per-host-subnet.tar.gz"; cp downloads/rancher-per-host-subnet-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz package/rancher-per-host-subnet.tar.gz
