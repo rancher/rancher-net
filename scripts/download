@@ -10,6 +10,7 @@ RANCHER_CNI_BRIDGE_REPO="${RANCHER_CNI_BRIDGE_REPO:-rancher}"
 RANCHER_CNI_IPAM_REPO="${RANCHER_CNI_IPAM_REPO:-rancher}"
 RANCHER_CNI_DRIVER_REPO="${RANCHER_CNI_DRIVER_REPO:-rancher}"
 RANCHER_PER_HOST_SUBNET_REPO="${RANCHER_PER_HOST_SUBNET_REPO:-rancher}"
+RANCHER_HOST_LOCAL_IPAM_REPO="${RANCHER_HOST_LOCAL_IPAM_REPO:-rancher}"
 
 # Tags
 RANCHER_IPSEC_TAG="${RANCHER_IPSEC_TAG:-v0.1.2}"
@@ -18,6 +19,7 @@ RANCHER_CNI_BRIDGE_TAG="${RANCHER_CNI_BRIDGE_TAG:-v0.7.1}"
 RANCHER_CNI_IPAM_TAG="${RANCHER_CNI_IPAM_TAG:-v0.2.1}"
 RANCHER_CNI_DRIVER_TAG="${RANCHER_CNI_DRIVER_TAG:-v0.1.0}"
 RANCHER_PER_HOST_SUBNET_TAG="${RANCHER_PER_HOST_SUBNET_TAG:-v0.1.0}"
+RANCHER_HOST_LOCAL_IPAM_TAG="${RANCHER_HOST_LOCAL_IPAM_TAG:-v0.1.0}"
 
 
 mkdir -p downloads
@@ -103,3 +105,17 @@ fi
 
 cmp -s downloads/rancher-per-host-subnet-amd64-${RANCHER_PER_HOST_SUBNET_TAG}.tar.gz package/rancher-per-host-subnet.tar.gz \
     || echo "copying to package/rancher-per-host-subnet.tar.gz"; cp downloads/rancher-per-host-subnet-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz package/rancher-per-host-subnet.tar.gz
+
+
+# rancher-host-local-ipam
+echo "rancher-host-local-ipam: REPO=${RANCHER_HOST_LOCAL_IPAM_REPO} TAG=${RANCHER_HOST_LOCAL_IPAM_TAG}"
+
+if [ ! -f downloads/rancher-host-local-ipam-amd64-${RANCHER_HOST_LOCAL_IPAM_TAG}.tar.gz ]; then
+    echo "Downloading rancher-host-local-ipam-amd64-${RANCHER_HOST_LOCAL_IPAM_TAG}.tar.gz"
+    curl -sfSL https://github.com/${RANCHER_HOST_LOCAL_IPAM_REPO}/rancher-host-local-ipam/releases/download/${RANCHER_HOST_LOCAL_IPAM_TAG}/rancher-host-local-ipam-amd64-${RANCHER_HOST_LOCAL_IPAM_TAG}.tar.gz > downloads/rancher-host-local-ipam-amd64-${RANCHER_HOST_LOCAL_IPAM_TAG}.tar.gz
+else
+    echo "Already downloaded: rancher-host-local-ipam-amd64-${RANCHER_HOST_LOCAL_IPAM_TAG}.tar.gz"
+fi
+
+cmp -s downloads/rancher-host-local-ipam-amd64-${RANCHER_HOST_LOCAL_IPAM_TAG}.tar.gz package/rancher-host-local-ipam.tar.gz \
+    || echo "copying to package/rancher-host-local-ipam.tar.gz"; cp downloads/rancher-host-local-ipam-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz package/rancher-host-local-ipam.tar.gz

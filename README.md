@@ -7,8 +7,11 @@ binaries into a single image.
 You can find the actual code here:
 - IPSec: https://github.com/rancher/ipsec
 - VXLAN: https://github.com/rancher/vxlan
+- Per Host Subnet: https://github.com/rancher/per-host-subnet
 - Rancher CNI Bridge Plugin: https://github.com/rancher/rancher-cni-bridge
 - Rancher CNI IPAM Plugin: https://github.com/rancher/rancher-cni-ipam
+- Rancher Host Local IPAM Plugin: https://github.com/rancher/rancher-host-local-ipam
+- CNI Driver: https://github.com/rancher/cni-driver
 
 ## Building
 
@@ -27,6 +30,8 @@ Repos:
 - RANCHER_CNI_BRIDGE_REPO
 - RANCHER_CNI_IPAM_REPO
 - RANCHER_CNI_DRIVER_REPO
+- RANCHER_PER_HOST_SUBNET_REPO
+- RANCHER_HOST_LOCAL_IPAM_REPO
 
 Tags:
 
@@ -35,6 +40,8 @@ Tags:
 - RANCHER_CNI_BRIDGE_TAG
 - RANCHER_CNI_IPAM_TAG
 - RANCHER_CNI_DRIVER_TAG
+- RANCHER_PER_HOST_SUBNET_TAG
+- RANCHER_HOST_LOCAL_IPAM_TAG
 
 
 For example:
