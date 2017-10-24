@@ -18,7 +18,7 @@ RANCHER_VXLAN_TAG="${RANCHER_VXLAN_TAG:-v0.1.3}"
 RANCHER_CNI_BRIDGE_TAG="${RANCHER_CNI_BRIDGE_TAG:-v0.7.1}"
 RANCHER_CNI_IPAM_TAG="${RANCHER_CNI_IPAM_TAG:-v0.2.1}"
 RANCHER_CNI_DRIVER_TAG="${RANCHER_CNI_DRIVER_TAG:-v0.1.0}"
-RANCHER_PER_HOST_SUBNET_TAG="${RANCHER_PER_HOST_SUBNET_TAG:-v0.1.0}"
+RANCHER_PER_HOST_SUBNET_TAG="${RANCHER_PER_HOST_SUBNET_TAG:-v0.1.1}"
 RANCHER_HOST_LOCAL_IPAM_TAG="${RANCHER_HOST_LOCAL_IPAM_TAG:-v0.1.0}"
 
 
@@ -104,7 +104,7 @@ else
 fi
 
 cmp -s downloads/rancher-per-host-subnet-amd64-${RANCHER_PER_HOST_SUBNET_TAG}.tar.gz package/rancher-per-host-subnet.tar.gz \
-    || echo "copying to package/rancher-per-host-subnet.tar.gz"; cp downloads/rancher-per-host-subnet-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz package/rancher-per-host-subnet.tar.gz
+    || echo "copying to package/rancher-per-host-subnet.tar.gz"; cp downloads/rancher-per-host-subnet-amd64-${RANCHER_PER_HOST_SUBNET_TAG}.tar.gz package/rancher-per-host-subnet.tar.gz
 
 
 # rancher-host-local-ipam
