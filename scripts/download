@@ -11,15 +11,17 @@ RANCHER_CNI_IPAM_REPO="${RANCHER_CNI_IPAM_REPO:-rancher}"
 RANCHER_CNI_DRIVER_REPO="${RANCHER_CNI_DRIVER_REPO:-rancher}"
 RANCHER_PER_HOST_SUBNET_REPO="${RANCHER_PER_HOST_SUBNET_REPO:-rancher}"
 RANCHER_HOST_LOCAL_IPAM_REPO="${RANCHER_HOST_LOCAL_IPAM_REPO:-rancher}"
+RANCHER_FLAT_IPAM_REPO="${RANCHER_FLAT_IPAM_REPO:-rancher}"
 
 # Tags
 RANCHER_IPSEC_TAG="${RANCHER_IPSEC_TAG:-v0.1.4}"
 RANCHER_VXLAN_TAG="${RANCHER_VXLAN_TAG:-v0.1.3}"
-RANCHER_CNI_BRIDGE_TAG="${RANCHER_CNI_BRIDGE_TAG:-v0.7.1}"
+RANCHER_CNI_BRIDGE_TAG="${RANCHER_CNI_BRIDGE_TAG:-v0.7.2}"
 RANCHER_CNI_IPAM_TAG="${RANCHER_CNI_IPAM_TAG:-v0.2.1}"
 RANCHER_CNI_DRIVER_TAG="${RANCHER_CNI_DRIVER_TAG:-v0.1.0}"
 RANCHER_PER_HOST_SUBNET_TAG="${RANCHER_PER_HOST_SUBNET_TAG:-v0.1.1}"
 RANCHER_HOST_LOCAL_IPAM_TAG="${RANCHER_HOST_LOCAL_IPAM_TAG:-v0.1.0}"
+RANCHER_FLAT_IPAM_TAG="${RANCHER_FLAT_IPAM_TAG:-v0.1.0}"
 
 
 mkdir -p downloads
@@ -118,4 +120,19 @@ else
 fi
 
 cmp -s downloads/rancher-host-local-ipam-amd64-${RANCHER_HOST_LOCAL_IPAM_TAG}.tar.gz package/rancher-host-local-ipam.tar.gz \
-    || echo "copying to package/rancher-host-local-ipam.tar.gz"; cp downloads/rancher-host-local-ipam-amd64-${RANCHER_CNI_DRIVER_TAG}.tar.gz package/rancher-host-local-ipam.tar.gz
+    || echo "copying to package/rancher-host-local-ipam.tar.gz"; cp downloads/rancher-host-local-ipam-amd64-${RANCHER_HOST_LOCAL_IPAM_TAG}.tar.gz package/rancher-host-local-ipam.tar.gz
+
+
+# rancher-flat-ipam
+echo "rancher-flat-ipam: REPO=${RANCHER_FLAT_IPAM_REPO} TAG=${RANCHER_FLAT_IPAM_TAG}"
+
+if [ ! -f downloads/rancher-flat-ipam-amd64-${RANCHER_FLAT_IPAM_TAG}.tar.gz ]; then
+    echo "Downloading rancher-flat-ipam-amd64-${RANCHER_FLAT_IPAM_TAG}.tar.gz"
+    curl -sfSL https://github.com/${RANCHER_FLAT_IPAM_REPO}/rancher-flat-ipam/releases/download/${RANCHER_FLAT_IPAM_TAG}/rancher-flat-ipam-amd64-${RANCHER_FLAT_IPAM_TAG}.tar.gz > downloads/rancher-flat-ipam-amd64-${RANCHER_FLAT_IPAM_TAG}.tar.gz
+else
+    echo "Already downloaded: rancher-flat-ipam-amd64-${RANCHER_FLAT_IPAM_TAG}.tar.gz"
+fi
+
+cmp -s downloads/rancher-flat-ipam-amd64-${RANCHER_FLAT_IPAM_TAG}.tar.gz package/rancher-flat-ipam.tar.gz \
+    || echo "copying to package/rancher-flat-ipam.tar.gz"; cp downloads/rancher-flat-ipam-amd64-${RANCHER_FLAT_IPAM_TAG}.tar.gz package/rancher-flat-ipam.tar.gz
+
