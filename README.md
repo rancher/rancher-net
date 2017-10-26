@@ -12,6 +12,7 @@ You can find the actual code here:
 - Rancher CNI IPAM Plugin: https://github.com/rancher/rancher-cni-ipam
 - Rancher Host Local IPAM Plugin: https://github.com/rancher/rancher-host-local-ipam
 - CNI Driver: https://github.com/rancher/cni-driver
+- Rancher Flat IPAM Plugin: https://github.com/rancher/rancher-flat-ipam
 
 ## Building
 
@@ -32,6 +33,7 @@ Repos:
 - RANCHER_CNI_DRIVER_REPO
 - RANCHER_PER_HOST_SUBNET_REPO
 - RANCHER_HOST_LOCAL_IPAM_REPO
+- RANCHER_FLAT_IPAM_REPO
 
 Tags:
 
@@ -42,6 +44,7 @@ Tags:
 - RANCHER_CNI_DRIVER_TAG
 - RANCHER_PER_HOST_SUBNET_TAG
 - RANCHER_HOST_LOCAL_IPAM_TAG
+- RANCHER_FLAT_IPAM_TAG
 
 
 For example:

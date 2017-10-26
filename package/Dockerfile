@@ -14,6 +14,9 @@ ADD rancher-cni-ipam.tar.gz /opt/cni/bin
 ADD rancher-cni-driver.tar.gz /
 ADD rancher-per-host-subnet.tar.gz /
 ADD rancher-host-local-ipam.tar.gz /opt/cni/bin
+ADD rancher-flat-ipam.tar.gz /opt/cni/bin
+
+COPY start-flat.sh /usr/bin
 
 RUN mkdir -p /etc/cni/net.d \
     && curl -sfSL https://github.com/containernetworking/cni/releases/download/${CNI}/cni-${CNI}.tgz | tar xvzf - -C /tmp ./loopback \
