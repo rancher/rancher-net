@@ -6,3 +6,4 @@
 /build
 /downloads
 .DS_Store
+/package/*.tar.gz
