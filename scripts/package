@@ -11,6 +11,10 @@ cd $(dirname $0)/../package
 TAG=${TAG:-${VERSION}${SUFFIX}}
 REPO=${REPO:-rancher}
 
+if [[ -n "${DRONE_REPO_OWNER}" ]]; then
+    REPO="${DRONE_REPO_OWNER}"
+fi
+
 if $(echo ${TAG} | grep -q dirty); then
     TAG=dev
 fi

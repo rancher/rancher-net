@@ -2,8 +2,17 @@
 pipeline:
   build:
     privileged: true
-    image: rancher/dapper:1.11.2
+    image: rancher/dapper:1.12.1
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock
     commands:
     - dapper ci
+  docker_push:
+    image: rancher/dapper:1.12.1
+    secrets: [ docker_username, docker_password ]
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+    - sh scripts/docker_push
+    when:
+      event: tag

@@ -9,6 +9,8 @@ GIT_TAG=$(git tag -l --contains HEAD | head -n 1)
 
 if [[ -z "$DIRTY" && -n "$GIT_TAG" ]]; then
     VERSION=$GIT_TAG
+elif [[ -n "${DRONE_TAG}" ]]; then
+    VERSION=${DRONE_TAG}
 else
     VERSION="${COMMIT}${DIRTY}"
 fi

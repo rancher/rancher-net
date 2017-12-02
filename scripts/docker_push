@@ -1,0 +1,21 @@
+#!/bin/bash -e
+
+if [[ -z "${DOCKER_USERNAME}" || -z "${DOCKER_PASSWORD}" ]]; then
+    echo "error: both docker username and password are required"
+    exit 1
+fi
+
+docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+if [[ $? -ne 0 ]]; then
+    echo "error: incorrect login credentials"
+    exit 1
+fi
+
+IMAGE_NAME=`cat dist/images`
+docker push ${IMAGE_NAME}
+if [[ $? -ne 0 ]]; then
+    echo "error: unable to push image to dockerhub"
+    exit 1
+fi
+
+echo "Successfully pushed image: ${IMAGE_NAME} to dockerhub"
