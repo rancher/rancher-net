@@ -12,9 +12,11 @@ RANCHER_CNI_DRIVER_REPO="${RANCHER_CNI_DRIVER_REPO:-rancher}"
 RANCHER_PER_HOST_SUBNET_REPO="${RANCHER_PER_HOST_SUBNET_REPO:-rancher}"
 RANCHER_HOST_LOCAL_IPAM_REPO="${RANCHER_HOST_LOCAL_IPAM_REPO:-rancher}"
 RANCHER_FLAT_IPAM_REPO="${RANCHER_FLAT_IPAM_REPO:-rancher}"
+RANCHER_CONNECTIVITY_CHECK_REPO="${RANCHER_CONNECTIVITY_CHECK_REPO:-rancher}"
+LOGLEVEL_REPO="${LOGLEVEL_REPO:-leodotcloud}"
 
 # Tags
-RANCHER_IPSEC_TAG="${RANCHER_IPSEC_TAG:-v0.1.4}"
+RANCHER_IPSEC_TAG="${RANCHER_IPSEC_TAG:-v0.1.6}"
 RANCHER_VXLAN_TAG="${RANCHER_VXLAN_TAG:-v0.1.4}"
 RANCHER_CNI_BRIDGE_TAG="${RANCHER_CNI_BRIDGE_TAG:-v0.7.2}"
 RANCHER_CNI_IPAM_TAG="${RANCHER_CNI_IPAM_TAG:-v0.2.1}"
@@ -22,6 +24,8 @@ RANCHER_CNI_DRIVER_TAG="${RANCHER_CNI_DRIVER_TAG:-v0.1.0}"
 RANCHER_PER_HOST_SUBNET_TAG="${RANCHER_PER_HOST_SUBNET_TAG:-v0.1.1}"
 RANCHER_HOST_LOCAL_IPAM_TAG="${RANCHER_HOST_LOCAL_IPAM_TAG:-v0.1.0}"
 RANCHER_FLAT_IPAM_TAG="${RANCHER_FLAT_IPAM_TAG:-v0.1.0}"
+RANCHER_CONNECTIVITY_CHECK_TAG="${RANCHER_CONNECTIVITY_CHECK_TAG:-v0.0.2}"
+LOGLEVEL_TAG="${LOGLEVEL_TAG:-v0.1}"
 
 
 mkdir -p downloads
@@ -136,3 +140,33 @@ fi
 cmp -s downloads/rancher-flat-ipam-amd64-${RANCHER_FLAT_IPAM_TAG}.tar.gz package/rancher-flat-ipam.tar.gz \
     || echo "copying to package/rancher-flat-ipam.tar.gz"; cp downloads/rancher-flat-ipam-amd64-${RANCHER_FLAT_IPAM_TAG}.tar.gz package/rancher-flat-ipam.tar.gz
 
+
+# connectivity-check
+echo "connectivity-check: REPO=${RANCHER_CONNECTIVITY_CHECK_REPO} TAG=${RANCHER_CONNECTIVITY_CHECK_TAG}"
+
+if [ ! -f downloads/connectivity-check-amd64-${RANCHER_CONNECTIVITY_CHECK_TAG}.tar.gz ]; then
+    echo "Downloading connectivity-check-amd64-${RANCHER_CONNECTIVITY_CHECK_TAG}.tar.gz"
+    curl -sfSL https://github.com/${RANCHER_CONNECTIVITY_CHECK_REPO}/connectivity-check/releases/download/${RANCHER_CONNECTIVITY_CHECK_TAG}/connectivity-check-amd64-${RANCHER_CONNECTIVITY_CHECK_TAG}.tar.gz > downloads/connectivity-check-amd64-${RANCHER_CONNECTIVITY_CHECK_TAG}.tar.gz
+else
+    echo "Already downloaded: connectivity-check-amd64-${RANCHER_CONNECTIVITY_CHECK_TAG}.tar.gz"
+fi
+
+cmp -s downloads/connectivity-check-amd64-${RANCHER_CONNECTIVITY_CHECK_TAG}.tar.gz package/connectivity-check.tar.gz \
+    || echo "copying to package/connectivity-check.tar.gz"; cp downloads/connectivity-check-amd64-${RANCHER_CONNECTIVITY_CHECK_TAG}.tar.gz package/connectivity-check.tar.gz
+
+
+
+# loglevel
+
+PACKAGE=loglevel
+echo "${PACKAGE}: REPO=${LOGLEVEL_REPO} TAG=${LOGLEVEL_TAG}"
+
+if [ ! -f downloads/${PACKAGE}-amd64-${LOGLEVEL_TAG}.tar.gz ]; then
+    echo "Downloading ${PACKAGE}-amd64-${LOGLEVEL_TAG}.tar.gz"
+    curl -sfSL https://github.com/${LOGLEVEL_REPO}/${PACKAGE}/releases/download/${LOGLEVEL_TAG}/${PACKAGE}-amd64-${LOGLEVEL_TAG}.tar.gz > downloads/${PACKAGE}-amd64-${LOGLEVEL_TAG}.tar.gz
+else
+    echo "Already downloaded: ${PACKAGE}-amd64-${LOGLEVEL_TAG}.tar.gz"
+fi
+
+cmp -s downloads/${PACKAGE}-amd64-${LOGLEVEL_TAG}.tar.gz package/${PACKAGE}.tar.gz \
+    || echo "copying to package/${PACKAGE}.tar.gz"; cp downloads/${PACKAGE}-amd64-${LOGLEVEL_TAG}.tar.gz package/${PACKAGE}.tar.gz

@@ -15,6 +15,8 @@ ADD rancher-cni-driver.tar.gz /
 ADD rancher-per-host-subnet.tar.gz /
 ADD rancher-host-local-ipam.tar.gz /opt/cni/bin
 ADD rancher-flat-ipam.tar.gz /opt/cni/bin
+ADD connectivity-check.tar.gz /
+ADD loglevel.tar.gz /usr/bin
 
 COPY start-flat.sh /usr/bin
 
